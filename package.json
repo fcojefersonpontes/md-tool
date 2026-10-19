@@ -1,0 +1,65 @@
+{
+  "name": "md-tool",
+  "displayName": "md-tool",
+  "description": "Visualize, edite e exporte Markdown para PDF e RTF.",
+  "version": "0.0.1",
+  "publisher": "jefersonpontes",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "preview",
+    "pdf",
+    "rtf",
+    "export"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mdTool.hello",
+        "title": "Hello",
+        "category": "md-tool"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "npm run check-types && node esbuild.mjs --production",
+    "check-types": "tsc --noEmit && tsc --noEmit -p webview",
+    "lint": "eslint src webview test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pretest:integration": "npm run compile && tsc -p test/integration/tsconfig.json",
+    "test:integration": "vscode-test",
+    "vscode:prepublish": "npm run package",
+    "vsix": "vsce package --skip-license"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.43",
+    "@types/vscode": "1.90.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^4.1.12"
+  }
+}
