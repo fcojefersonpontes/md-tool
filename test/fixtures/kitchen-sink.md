@@ -9,6 +9,8 @@ Autolink: https://code.visualstudio.com. Link to a [section](#tabelas) and to [a
 
 ![Logo](assets/logo.svg)
 
+![Banner](assets/banner.png)
+
 ## Listas
 
 - Item
@@ -20,6 +22,8 @@ Autolink: https://code.visualstudio.com. Link to a [section](#tabelas) and to [a
 2. Second
 
 > Blockquote with **emphasis**.
+>
+> Second line with `code` e acentuação: ção, ü, 日本, emoji 🎉.
 
 ## Tabelas
 

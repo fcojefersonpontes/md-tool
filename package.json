@@ -30,7 +30,8 @@
       "description": "%capabilities.untrustedWorkspaces%",
       "restrictedConfigurations": [
         "mdTool.markdown.allowHtml",
-        "mdTool.preview.customCss"
+        "mdTool.preview.customCss",
+        "mdTool.pdf.executablePath"
       ]
     }
   },
@@ -47,6 +48,18 @@
         "title": "%command.openPreviewToSide%",
         "category": "md-tool",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "mdTool.exportPdf",
+        "title": "%command.exportPdf%",
+        "category": "md-tool",
+        "icon": "$(file-pdf)"
+      },
+      {
+        "command": "mdTool.exportRtf",
+        "title": "%command.exportRtf%",
+        "category": "md-tool",
+        "icon": "$(file-text)"
       }
     ],
     "menus": {
@@ -55,6 +68,16 @@
           "command": "mdTool.openPreviewToSide",
           "when": "editorLangId == markdown && !notebookEditorFocused",
           "group": "navigation"
+        },
+        {
+          "command": "mdTool.exportPdf",
+          "when": "activeWebviewPanelId == 'mdTool.preview'",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mdTool.exportRtf",
+          "when": "activeWebviewPanelId == 'mdTool.preview'",
+          "group": "navigation@2"
         }
       ],
       "explorer/context": [
@@ -62,6 +85,16 @@
           "command": "mdTool.openPreview",
           "when": "resourceLangId == markdown",
           "group": "navigation"
+        },
+        {
+          "command": "mdTool.exportPdf",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@10"
+        },
+        {
+          "command": "mdTool.exportRtf",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@11"
         }
       ],
       "commandPalette": [
@@ -72,6 +105,26 @@
         {
           "command": "mdTool.openPreviewToSide",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "mdTool.exportPdf",
+          "when": "editorLangId == markdown || activeWebviewPanelId == 'mdTool.preview'"
+        },
+        {
+          "command": "mdTool.exportRtf",
+          "when": "editorLangId == markdown || activeWebviewPanelId == 'mdTool.preview'"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "mdTool.exportPdf",
+          "when": "editorLangId == markdown",
+          "group": "md-tool@1"
+        },
+        {
+          "command": "mdTool.exportRtf",
+          "when": "editorLangId == markdown",
+          "group": "md-tool@2"
         }
       ]
     },
@@ -132,6 +185,80 @@
           "default": true,
           "scope": "resource",
           "description": "%config.markdown.mermaid%"
+        },
+        "mdTool.export.outputDir": {
+          "type": "string",
+          "default": "${fileDirname}",
+          "scope": "resource",
+          "markdownDescription": "%config.export.outputDir%"
+        },
+        "mdTool.export.askLocation": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.export.askLocation%"
+        },
+        "mdTool.export.pageSize": {
+          "type": "string",
+          "enum": [
+            "A4",
+            "Letter",
+            "Legal"
+          ],
+          "default": "A4",
+          "scope": "resource",
+          "description": "%config.export.pageSize%"
+        },
+        "mdTool.export.landscape": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "%config.export.landscape%"
+        },
+        "mdTool.export.margin": {
+          "type": "string",
+          "default": "20mm",
+          "scope": "resource",
+          "markdownDescription": "%config.export.margin%"
+        },
+        "mdTool.pdf.executablePath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "%config.pdf.executablePath%"
+        },
+        "mdTool.pdf.headerTemplate": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "%config.pdf.headerTemplate%",
+          "editPresentation": "multilineText"
+        },
+        "mdTool.pdf.footerTemplate": {
+          "type": "string",
+          "default": "<div style=\"width:100%;font-family:sans-serif;font-size:9px;color:#666;text-align:center\"><span class=\"pageNumber\"></span> / <span class=\"totalPages\"></span></div>",
+          "scope": "resource",
+          "markdownDescription": "%config.pdf.footerTemplate%",
+          "editPresentation": "multilineText"
+        },
+        "mdTool.rtf.fontFamily": {
+          "type": "string",
+          "default": "Calibri",
+          "scope": "resource",
+          "description": "%config.rtf.fontFamily%"
+        },
+        "mdTool.rtf.codeFontFamily": {
+          "type": "string",
+          "default": "Consolas",
+          "scope": "resource",
+          "description": "%config.rtf.codeFontFamily%"
+        },
+        "mdTool.rtf.fontSize": {
+          "type": "number",
+          "default": 11,
+          "minimum": 6,
+          "maximum": 72,
+          "scope": "resource",
+          "description": "%config.rtf.fontSize%"
         }
       }
     }
@@ -149,7 +276,9 @@
     "pretest:integration": "npm run compile && tsc -p test/integration/tsconfig.json",
     "test:integration": "vscode-test",
     "vscode:prepublish": "npm run package",
-    "vsix": "vsce package --skip-license --no-dependencies"
+    "vsix": "vsce package --skip-license --no-dependencies",
+    "test:browser": "vitest run --config vitest.browser.config.mts",
+    "pretest:browser": "npm run compile"
   },
   "dependencies": {
     "@shikijs/langs": "^4.5.0",
@@ -161,7 +290,9 @@
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-front-matter": "^0.2.4",
     "mermaid": "^12.2.0",
-    "shiki": "^4.5.0"
+    "puppeteer-core": "^25.14.0",
+    "shiki": "^4.5.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

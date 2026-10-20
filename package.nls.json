@@ -12,5 +12,18 @@
   "config.preview.scrollSync": "Synchronize scrolling between the editor and the preview.",
   "config.markdown.allowHtml": "Render raw HTML in Markdown (sanitized). Ignored in untrusted workspaces.",
   "config.markdown.math": "Render math with KaTeX ($inline$ and $$block$$).",
-  "config.markdown.mermaid": "Render ```mermaid code blocks as diagrams."
+  "config.markdown.mermaid": "Render ```mermaid code blocks as diagrams.",
+  "command.exportPdf": "Export to PDF",
+  "command.exportRtf": "Export to RTF",
+  "config.export.outputDir": "Folder for exported files. Supports `${fileDirname}` and `${workspaceFolder}`; relative paths resolve against the Markdown file.",
+  "config.export.askLocation": "Ask where to save each export instead of using the output folder.",
+  "config.export.pageSize": "Page size for PDF and RTF exports.",
+  "config.export.landscape": "Use landscape orientation for PDF and RTF exports.",
+  "config.export.margin": "Page margins as a CSS length or shorthand, e.g. `20mm` or `15mm 20mm`.",
+  "config.pdf.executablePath": "Path to Chrome, Edge or Chromium used to print PDFs. Leave empty to detect automatically.",
+  "config.pdf.headerTemplate": "HTML for the PDF page header. Use `<span class=\"title\">`, `<span class=\"date\">`, `<span class=\"pageNumber\">` and `<span class=\"totalPages\">`. Empty for no header.",
+  "config.pdf.footerTemplate": "HTML for the PDF page footer (same placeholders as the header). Empty for no footer.",
+  "config.rtf.fontFamily": "Body font for RTF exports.",
+  "config.rtf.codeFontFamily": "Monospace font for code in RTF exports.",
+  "config.rtf.fontSize": "Body font size in points for RTF exports."
 }

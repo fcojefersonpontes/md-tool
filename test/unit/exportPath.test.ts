@@ -31,3 +31,17 @@ describe('resolveExportPath', () => {
     expect(resolveExportPath(path.resolve('/a/v1.2.md'), 'pdf')).toBe(path.resolve('/a/v1.2.pdf'));
   });
 });
+
+describe('resolveExportPath with ${workspaceFolder}', () => {
+  it('expands the workspace folder', () => {
+    expect(
+      resolveExportPath(source, 'pdf', '${workspaceFolder}/exports', path.resolve('/docs')),
+    ).toBe(path.resolve('/docs/exports/readme.pdf'));
+  });
+
+  it('falls back to the file directory without a workspace', () => {
+    expect(resolveExportPath(source, 'pdf', '${workspaceFolder}')).toBe(
+      path.resolve('/docs/notes/readme.pdf'),
+    );
+  });
+});

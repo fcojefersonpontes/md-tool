@@ -1,3 +1,4 @@
+import * as nodePath from 'node:path';
 import * as vscode from 'vscode';
 
 const SCHEME = /^[a-z][a-z\d+.-]*:/i;
@@ -42,4 +43,11 @@ export function safeDecode(value: string): string {
   } catch {
     return value;
   }
+}
+
+/** Resolves a `mdTool.preview.customCss` entry: absolute, or relative to the workspace folder. */
+export function resolveStylesheet(document: vscode.Uri, href: string): vscode.Uri | undefined {
+  if (nodePath.isAbsolute(href)) return vscode.Uri.file(href);
+  const folder = vscode.workspace.getWorkspaceFolder(document);
+  return folder ? vscode.Uri.joinPath(folder.uri, href) : resolveDocumentPath(document, href);
 }

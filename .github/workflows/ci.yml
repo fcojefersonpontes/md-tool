@@ -23,6 +23,7 @@ jobs:
       - run: npm run format:check
       - run: npm run check-types
       - run: npm test
+      - run: npm run test:browser
       - name: Integration tests (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run test:integration

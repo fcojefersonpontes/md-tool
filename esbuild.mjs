@@ -39,6 +39,13 @@ const extension = {
   external: ['vscode'],
 };
 
+/** Puppeteer-based PDF printer and rasterizer, required lazily on first export. */
+const browserTasks = {
+  ...extension,
+  entryPoints: ['src/export/browser/index.ts'],
+  outfile: 'dist/browser.js',
+};
+
 /** Webview bundle (browser, IIFE). */
 const webview = {
   ...common,
@@ -57,7 +64,9 @@ cpSync('node_modules/katex/dist/katex.min.css', 'dist/webview/katex/katex.min.cs
 cpSync('node_modules/katex/dist/fonts', 'dist/webview/katex/fonts', { recursive: true });
 cpSync('node_modules/mermaid/dist/mermaid.min.js', 'dist/webview/mermaid.min.js');
 
-const contexts = await Promise.all([esbuild.context(extension), esbuild.context(webview)]);
+const contexts = await Promise.all(
+  [extension, browserTasks, webview].map((options) => esbuild.context(options)),
+);
 
 if (watch) {
   await Promise.all(contexts.map((ctx) => ctx.watch()));

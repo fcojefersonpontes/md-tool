@@ -4,7 +4,7 @@ import { getPreviewConfig } from '../config';
 import { escapeHtml } from '../core/html';
 import type { MarkdownEngine } from '../core/MarkdownEngine';
 import { toggleTaskLine } from '../core/taskList';
-import { hasScheme, resolveDocumentPath, safeDecode, splitHref } from '../paths';
+import { hasScheme, resolveDocumentPath, resolveStylesheet, safeDecode, splitHref } from '../paths';
 import type { HostMessage, WebviewMessage } from '../../webview/messages';
 
 /** Delay between the last keystroke and the preview re-render. */
@@ -51,7 +51,7 @@ export class PreviewPanel implements vscode.Disposable {
   reload(): void {
     const config = getPreviewConfig(this.uri);
     const customCss = config.customCss
-      .map((href) => this.resolveStylesheet(href))
+      .map((href) => resolveStylesheet(this.uri, href))
       .filter((uri): uri is vscode.Uri => uri !== undefined);
 
     this.panel.webview.options = {
@@ -156,12 +156,6 @@ export class PreviewPanel implements vscode.Disposable {
     const { path: filePath, suffix } = splitHref(src);
     const target = resolveDocumentPath(this.uri, filePath);
     return target ? this.panel.webview.asWebviewUri(target).toString() + suffix : src;
-  }
-
-  private resolveStylesheet(href: string): vscode.Uri | undefined {
-    if (path.isAbsolute(href)) return vscode.Uri.file(href);
-    const folder = vscode.workspace.getWorkspaceFolder(this.uri);
-    return folder ? vscode.Uri.joinPath(folder.uri, href) : resolveDocumentPath(this.uri, href);
   }
 
   // ------------------------------------------------------------- messages

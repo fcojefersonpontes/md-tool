@@ -1,5 +1,17 @@
 {
   "Preview {0}": "Preview {0}",
-  "Open a Markdown file to preview it.": "Abra um arquivo Markdown para visualizá-lo.",
-  "Could not render {0}: {1}": "Não foi possível renderizar {0}: {1}"
+  "Open a Markdown file first.": "Abra um arquivo Markdown primeiro.",
+  "Could not render {0}: {1}": "Não foi possível renderizar {0}: {1}",
+  "Exporting {0}…": "Exportando {0}…",
+  "Open": "Abrir",
+  "Show in Folder": "Mostrar na Pasta",
+  "Exported {0}.": "{0} exportado.",
+  "Exported {0}. {1}": "{0} exportado. {1}",
+  "Configure Browser Path": "Configurar Caminho do Navegador",
+  "PDF export needs Google Chrome, Microsoft Edge or Chromium. Install one or set \"mdTool.pdf.executablePath\".": "A exportação para PDF precisa do Google Chrome, Microsoft Edge ou Chromium. Instale um deles ou configure \"mdTool.pdf.executablePath\".",
+  "Export failed: {0}": "Falha na exportação: {0}",
+  "Raw HTML was omitted.": "HTML bruto foi omitido.",
+  "Some Mermaid diagrams were exported as code (no browser found, or the diagram is invalid).": "Alguns diagramas Mermaid foram exportados como código (navegador não encontrado ou diagrama inválido).",
+  "Some formulas were exported as TeX source (no browser found, or the formula is invalid).": "Algumas fórmulas foram exportadas como código TeX (navegador não encontrado ou fórmula inválida).",
+  "Some images could not be embedded and were replaced by their alt text.": "Algumas imagens não puderam ser embutidas e foram substituídas pelo texto alternativo."
 }

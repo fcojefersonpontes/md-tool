@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { getEngineOptions } from '../config';
-import { MarkdownEngine } from '../core/MarkdownEngine';
+import type { MarkdownEngine } from '../core/MarkdownEngine';
+import type { EngineProvider } from '../engineProvider';
 import type { PreviewState } from '../../webview/messages';
 import { PreviewPanel, previewTitle, type PreviewHost } from './PreviewPanel';
 
@@ -12,9 +12,10 @@ export class PreviewManager
 {
   private readonly panels = new Set<PreviewPanel>();
   private readonly disposables: vscode.Disposable[] = [];
-  private engine: { key: string; engine: Promise<MarkdownEngine> } | undefined;
-
-  constructor(readonly extensionUri: vscode.Uri) {
+  constructor(
+    readonly extensionUri: vscode.Uri,
+    private readonly engines: EngineProvider,
+  ) {
     this.disposables.push(
       vscode.window.registerWebviewPanelSerializer(PREVIEW_VIEW_TYPE, this),
       vscode.workspace.onDidChangeTextDocument((event) => {
@@ -56,10 +57,12 @@ export class PreviewManager
   }
 
   getEngine(scope: vscode.Uri): Promise<MarkdownEngine> {
-    const options = getEngineOptions(scope);
-    const key = JSON.stringify(options);
-    if (this.engine?.key !== key) this.engine = { key, engine: MarkdownEngine.create(options) };
-    return this.engine.engine;
+    return this.engines.get(scope);
+  }
+
+  /** Document shown in the focused preview, if a preview has focus. */
+  activeDocument(): vscode.Uri | undefined {
+    return [...this.panels].find((panel) => panel.panel.active)?.uri;
   }
 
   onPanelDisposed(panel: PreviewPanel): void {
@@ -76,7 +79,6 @@ export class PreviewManager
   }
 
   private reloadAll(): void {
-    this.engine = undefined;
     for (const panel of this.panels) panel.reload();
   }
 }

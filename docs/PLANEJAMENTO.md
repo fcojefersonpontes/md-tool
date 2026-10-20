@@ -193,30 +193,30 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 | Unicode                               | `\uN?` para caracteres fora do ASCII (acentos, emoji via surrogates)                  |
 
 - Escapar `\`, `{` e `}`.
-- Mermaid e KaTeX não têm equivalente em RTF. Na v1 viram bloco de código com aviso; depois podem ser rasterizados em PNG via navegador headless e embutidos.
+- Mermaid, KaTeX e imagens SVG/GIF/WebP não têm equivalente em RTF: são renderizados pelo navegador headless e embutidos como PNG. Sem navegador, saem como código/TeX/texto alternativo, com aviso.
 - **Testes golden:** cada fixture `.md` gera um `.rtf` comparado com o esperado, e a validação manual é feita abrindo no Word, LibreOffice e WordPad.
-- Backend alternativo: `mdTool.rtf.engine: "builtin" | "pandoc"`.
+- Backend alternativo (futuro, não implementado na v1): `mdTool.rtf.engine: "builtin" | "pandoc"`.
 
 ---
 
 ## 5. Configurações (`contributes.configuration`)
 
-| Chave                                          | Tipo                      | Padrão                  |
-| ---------------------------------------------- | ------------------------- | ----------------------- |
-| `mdTool.preview.theme`                         | `auto \| light \| dark`   | `auto`                  |
-| `mdTool.preview.customCss`                     | string[] (caminhos)       | `[]`                    |
-| `mdTool.preview.scrollSync`                    | boolean                   | `true`                  |
-| `mdTool.markdown.allowHtml`                    | boolean                   | `false`                 |
-| `mdTool.markdown.math` / `.mermaid`            | boolean                   | `true`                  |
-| `mdTool.export.outputDir`                      | string (`${fileDirname}`) | `${fileDirname}`        |
-| `mdTool.export.askLocation`                    | boolean                   | `false`                 |
-| `mdTool.pdf.executablePath`                    | string                    | `""` (auto)             |
-| `mdTool.pdf.format`                            | `A4 \| Letter \| Legal`   | `A4`                    |
-| `mdTool.pdf.margin`                            | string                    | `"20mm"`                |
-| `mdTool.pdf.headerTemplate` / `footerTemplate` | string                    | rodapé com nº da página |
-| `mdTool.rtf.engine`                            | `builtin \| pandoc`       | `builtin`               |
-| `mdTool.rtf.fontFamily` / `fontSize`           | string / number           | `Calibri` / `11`        |
-| `mdTool.images.pasteFolder`                    | string                    | `assets`                |
+| Chave                                                   | Tipo                      | Padrão                        |
+| ------------------------------------------------------- | ------------------------- | ----------------------------- |
+| `mdTool.preview.theme`                                  | `auto \| light \| dark`   | `auto`                        |
+| `mdTool.preview.customCss`                              | string[] (caminhos)       | `[]`                          |
+| `mdTool.preview.scrollSync`                             | boolean                   | `true`                        |
+| `mdTool.markdown.allowHtml`                             | boolean                   | `false`                       |
+| `mdTool.markdown.math` / `.mermaid`                     | boolean                   | `true`                        |
+| `mdTool.export.outputDir`                               | string (`${fileDirname}`) | `${fileDirname}`              |
+| `mdTool.export.askLocation`                             | boolean                   | `false`                       |
+| `mdTool.pdf.executablePath`                             | string                    | `""` (auto)                   |
+| `mdTool.export.pageSize`                                | `A4 \| Letter \| Legal`   | `A4`                          |
+| `mdTool.export.landscape`                               | boolean                   | `false`                       |
+| `mdTool.export.margin`                                  | string                    | `"20mm"`                      |
+| `mdTool.pdf.headerTemplate` / `footerTemplate`          | string                    | rodapé com nº da página       |
+| `mdTool.rtf.fontFamily` / `codeFontFamily` / `fontSize` | string / string / number  | `Calibri` / `Consolas` / `11` |
+| `mdTool.images.pasteFolder`                             | string                    | `assets`                      |
 
 ---
 
@@ -262,7 +262,7 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 
 - Editor WYSIWYG via `CustomTextEditorProvider` (Milkdown ou Tiptap), sincronizado com o `TextDocument`.
 - Exportar DOCX e HTML standalone.
-- Mermaid e KaTeX rasterizados dentro do RTF.
+- ~~Mermaid e KaTeX rasterizados dentro do RTF.~~ (feito na Fase 2)
 
 **Estimativa total da v1:** cerca de 3 a 4 semanas para uma pessoa.
 

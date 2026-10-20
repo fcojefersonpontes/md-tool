@@ -28,7 +28,10 @@ suite('Extension', () => {
   suiteSetup(() => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-tool-'));
     const filePath = path.join(dir, 'sample.md');
-    fs.writeFileSync(filePath, '# Sample\n\n- [ ] task\n\n```ts\nconst a = 1;\n```\n');
+    fs.writeFileSync(
+      filePath,
+      '# Sample\n\n- [ ] task\n\nEnergy: $E = mc^2$\n\n```ts\nconst a = 1;\n```\n',
+    );
     file = vscode.Uri.file(filePath);
   });
 
@@ -48,6 +51,33 @@ suite('Extension', () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(commands.includes('mdTool.openPreview'));
     assert.ok(commands.includes('mdTool.openPreviewToSide'));
+    assert.ok(commands.includes('mdTool.exportPdf'));
+    assert.ok(commands.includes('mdTool.exportRtf'));
+  });
+
+  test('exports RTF next to the source file', async () => {
+    const target = await vscode.commands.executeCommand<vscode.Uri | undefined>(
+      'mdTool.exportRtf',
+      file,
+    );
+    assert.ok(target, 'export returned no file');
+    assert.strictEqual(target.fsPath, file.fsPath.replace(/\.md$/, '.rtf'));
+    const rtf = fs.readFileSync(target.fsPath, 'ascii');
+    assert.ok(rtf.startsWith('{\\rtf1'), rtf.slice(0, 40));
+    assert.ok(rtf.includes('Sample\\par'));
+    // The formula is rendered by the browser and embedded as a picture, not as TeX.
+    assert.ok(rtf.includes('\\pict\\pngblip'), 'formula was not embedded as an image');
+    assert.ok(!rtf.includes('mc^2'), 'formula source leaked into the RTF');
+  });
+
+  test('exports PDF next to the source file', async () => {
+    const target = await vscode.commands.executeCommand<vscode.Uri | undefined>(
+      'mdTool.exportPdf',
+      file,
+    );
+    assert.ok(target, 'export returned no file (is Chrome/Edge installed?)');
+    const pdf = fs.readFileSync(target.fsPath);
+    assert.strictEqual(pdf.subarray(0, 5).toString(), '%PDF-');
   });
 
   test('opens the preview to the side, once per document', async () => {

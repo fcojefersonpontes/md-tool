@@ -28,6 +28,14 @@ export interface Heading {
   line: number;
 }
 
+export type { Token };
+
+export interface ParseResult {
+  tokens: Token[];
+  headings: Heading[];
+  frontMatter?: string;
+}
+
 export interface RenderResult {
   html: string;
   headings: Heading[];
@@ -68,6 +76,15 @@ export class MarkdownEngine {
 
   static async create(options: EngineOptions): Promise<MarkdownEngine> {
     return new MarkdownEngine(options, await getHighlighter());
+  }
+
+  /** Token stream for consumers that do not emit HTML (e.g. the RTF exporter). */
+  parse(text: string): ParseResult {
+    const env: RenderEnv = { headings: [] };
+    const tokens = this.md.parse(text, env);
+    const frontMatter = tokens.find((token) => token.type === 'front_matter')?.meta as
+      string | undefined;
+    return { tokens, headings: env.headings, frontMatter };
   }
 
   render(text: string, options: RenderOptions = {}): RenderResult {

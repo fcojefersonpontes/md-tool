@@ -11,5 +11,18 @@
   "config.preview.scrollSync": "Sincronizar a rolagem entre o editor e o preview.",
   "config.markdown.allowHtml": "Renderizar HTML bruto no Markdown (sanitizado). Ignorado em workspaces não confiáveis.",
   "config.markdown.math": "Renderizar fórmulas com KaTeX ($inline$ e $$bloco$$).",
-  "config.markdown.mermaid": "Renderizar blocos ```mermaid como diagramas."
+  "config.markdown.mermaid": "Renderizar blocos ```mermaid como diagramas.",
+  "command.exportPdf": "Exportar para PDF",
+  "command.exportRtf": "Exportar para RTF",
+  "config.export.outputDir": "Pasta dos arquivos exportados. Aceita `${fileDirname}` e `${workspaceFolder}`; caminhos relativos partem do arquivo Markdown.",
+  "config.export.askLocation": "Perguntar onde salvar a cada exportação em vez de usar a pasta de saída.",
+  "config.export.pageSize": "Tamanho da página nas exportações PDF e RTF.",
+  "config.export.landscape": "Usar orientação paisagem nas exportações PDF e RTF.",
+  "config.export.margin": "Margens da página como comprimento CSS ou abreviação, ex.: `20mm` ou `15mm 20mm`.",
+  "config.pdf.executablePath": "Caminho do Chrome, Edge ou Chromium usado para gerar PDFs. Deixe vazio para detectar automaticamente.",
+  "config.pdf.headerTemplate": "HTML do cabeçalho das páginas do PDF. Use `<span class=\"title\">`, `<span class=\"date\">`, `<span class=\"pageNumber\">` e `<span class=\"totalPages\">`. Vazio para sem cabeçalho.",
+  "config.pdf.footerTemplate": "HTML do rodapé das páginas do PDF (mesmos marcadores do cabeçalho). Vazio para sem rodapé.",
+  "config.rtf.fontFamily": "Fonte do texto nas exportações RTF.",
+  "config.rtf.codeFontFamily": "Fonte monoespaçada do código nas exportações RTF.",
+  "config.rtf.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações RTF."
 }
