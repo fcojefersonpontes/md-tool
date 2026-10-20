@@ -125,7 +125,7 @@ md-tool/
 
 ### 4.1 Visualização
 
-- **Comandos:** `mdTool.openPreview` (mesma aba), `mdTool.openPreviewToSide` (`Ctrl+K V`, configurável).
+- **Comandos:** `mdTool.openPreview` (mesma aba), `mdTool.openPreviewToSide` (`Ctrl+K Alt+V`, para não conflitar com o `Ctrl+K V` do preview nativo).
 - **Atualização ao vivo:** `onDidChangeTextDocument` com debounce; só o HTML do corpo é enviado via `postMessage`, sem recarregar o webview.
 - **Scroll sincronizado:** o plugin `sourceLines` grava `data-line` nos blocos. Editor → preview via `onDidChangeTextEditorVisibleRanges`; preview → editor via mensagem `revealLine`.
 - **Links:** links relativos para `.md` abrem no editor; âncoras rolam o preview; links externos usam `vscode.env.openExternal`.

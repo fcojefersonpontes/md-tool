@@ -2,6 +2,8 @@
 !dist/**
 !media/**
 !package.json
+!package.nls*.json
+!l10n/**
 !README.md
 !CHANGELOG.md
 !LICENSE

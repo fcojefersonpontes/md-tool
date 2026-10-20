@@ -1,0 +1,16 @@
+{
+  "displayName": "md-tool",
+  "description": "Preview, edit and export Markdown to PDF and RTF.",
+  "capabilities.untrustedWorkspaces": "Raw HTML and custom stylesheets are disabled in untrusted workspaces.",
+  "command.openPreview": "Open Preview",
+  "command.openPreviewToSide": "Open Preview to the Side",
+  "config.preview.theme": "Color theme of the preview.",
+  "config.preview.theme.auto": "Follow the VS Code color theme.",
+  "config.preview.theme.light": "Always use the light theme.",
+  "config.preview.theme.dark": "Always use the dark theme.",
+  "config.preview.customCss": "Stylesheets added to the preview. Relative paths resolve against the workspace folder.",
+  "config.preview.scrollSync": "Synchronize scrolling between the editor and the preview.",
+  "config.markdown.allowHtml": "Render raw HTML in Markdown (sanitized). Ignored in untrusted workspaces.",
+  "config.markdown.math": "Render math with KaTeX ($inline$ and $$block$$).",
+  "config.markdown.mermaid": "Render ```mermaid code blocks as diagrams."
+}

@@ -1,7 +1,7 @@
 {
   "name": "md-tool",
-  "displayName": "md-tool",
-  "description": "Visualize, edite e exporte Markdown para PDF e RTF.",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "0.0.1",
   "publisher": "jefersonpontes",
   "private": true,
@@ -19,17 +19,122 @@
     "export"
   ],
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onWebviewPanel:mdTool.preview"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "%capabilities.untrustedWorkspaces%",
+      "restrictedConfigurations": [
+        "mdTool.markdown.allowHtml",
+        "mdTool.preview.customCss"
+      ]
+    }
+  },
   "contributes": {
     "commands": [
       {
-        "command": "mdTool.hello",
-        "title": "Hello",
-        "category": "md-tool"
+        "command": "mdTool.openPreview",
+        "title": "%command.openPreview%",
+        "category": "md-tool",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "mdTool.openPreviewToSide",
+        "title": "%command.openPreviewToSide%",
+        "category": "md-tool",
+        "icon": "$(open-preview)"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "mdTool.openPreviewToSide",
+          "when": "editorLangId == markdown && !notebookEditorFocused",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "mdTool.openPreview",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mdTool.openPreview",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "mdTool.openPreviewToSide",
+          "when": "editorLangId == markdown"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "mdTool.openPreviewToSide",
+        "key": "ctrl+k alt+v",
+        "mac": "cmd+k alt+v",
+        "when": "editorTextFocus && editorLangId == markdown"
+      }
+    ],
+    "configuration": {
+      "title": "md-tool",
+      "properties": {
+        "mdTool.preview.theme": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "default": "auto",
+          "enumDescriptions": [
+            "%config.preview.theme.auto%",
+            "%config.preview.theme.light%",
+            "%config.preview.theme.dark%"
+          ],
+          "description": "%config.preview.theme%"
+        },
+        "mdTool.preview.customCss": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "description": "%config.preview.customCss%"
+        },
+        "mdTool.preview.scrollSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.preview.scrollSync%"
+        },
+        "mdTool.markdown.allowHtml": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "%config.markdown.allowHtml%"
+        },
+        "mdTool.markdown.math": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "%config.markdown.math%"
+        },
+        "mdTool.markdown.mermaid": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "%config.markdown.mermaid%"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "npm run check-types && node esbuild.mjs",
@@ -44,10 +149,25 @@
     "pretest:integration": "npm run compile && tsc -p test/integration/tsconfig.json",
     "test:integration": "vscode-test",
     "vscode:prepublish": "npm run package",
-    "vsix": "vsce package --skip-license"
+    "vsix": "vsce package --skip-license --no-dependencies"
+  },
+  "dependencies": {
+    "@shikijs/langs": "^4.5.0",
+    "@shikijs/themes": "^4.5.0",
+    "@vscode/markdown-it-katex": "^1.1.2",
+    "dompurify": "^3.4.17",
+    "katex": "^0.19.0",
+    "markdown-it": "^14.3.3",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-front-matter": "^0.2.4",
+    "mermaid": "^12.2.0",
+    "shiki": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jsdom": "^30.0.0",
+    "@types/markdown-it": "^14.2.0",
+    "@types/markdown-it-footnote": "^3.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.43",
     "@types/vscode": "1.90.0",
@@ -57,6 +177,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^29.1.1",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",

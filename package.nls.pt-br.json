@@ -1,0 +1,15 @@
+{
+  "description": "Visualize, edite e exporte Markdown para PDF e RTF.",
+  "capabilities.untrustedWorkspaces": "HTML bruto e folhas de estilo personalizadas ficam desativados em workspaces não confiáveis.",
+  "command.openPreview": "Abrir Preview",
+  "command.openPreviewToSide": "Abrir Preview ao Lado",
+  "config.preview.theme": "Tema de cores do preview.",
+  "config.preview.theme.auto": "Seguir o tema de cores do VS Code.",
+  "config.preview.theme.light": "Usar sempre o tema claro.",
+  "config.preview.theme.dark": "Usar sempre o tema escuro.",
+  "config.preview.customCss": "Folhas de estilo adicionadas ao preview. Caminhos relativos partem da pasta do workspace.",
+  "config.preview.scrollSync": "Sincronizar a rolagem entre o editor e o preview.",
+  "config.markdown.allowHtml": "Renderizar HTML bruto no Markdown (sanitizado). Ignorado em workspaces não confiáveis.",
+  "config.markdown.math": "Renderizar fórmulas com KaTeX ($inline$ e $$bloco$$).",
+  "config.markdown.mermaid": "Renderizar blocos ```mermaid como diagramas."
+}

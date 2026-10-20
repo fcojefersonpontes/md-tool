@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { rmSync } from 'node:fs';
+import { cpSync, rmSync } from 'node:fs';
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -51,6 +51,11 @@ const webview = {
 
 // Production builds start clean so stale source maps never reach the .vsix.
 if (production) rmSync('dist', { recursive: true, force: true });
+
+// Runtime assets loaded by the webview that are not bundled by esbuild.
+cpSync('node_modules/katex/dist/katex.min.css', 'dist/webview/katex/katex.min.css');
+cpSync('node_modules/katex/dist/fonts', 'dist/webview/katex/fonts', { recursive: true });
+cpSync('node_modules/mermaid/dist/mermaid.min.js', 'dist/webview/mermaid.min.js');
 
 const contexts = await Promise.all([esbuild.context(extension), esbuild.context(webview)]);
 
