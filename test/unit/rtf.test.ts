@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MarkdownEngine } from '../../src/core/MarkdownEngine';
-import { collectRtfAssets } from '../../src/core/rtf/assets';
+import { collectAssets } from '../../src/core/exportAssets';
 import { escapeRtf } from '../../src/core/rtf/escape';
 import { imageToRtf, readImage } from '../../src/core/rtf/images';
 import { bookmarkName, renderRtf, type RtfOptions } from '../../src/core/rtf/RtfRenderer';
@@ -129,7 +129,7 @@ describe('images', () => {
   });
 });
 
-describe('collectRtfAssets', () => {
+describe('collectAssets', () => {
   it('lists images, formulas and diagrams once each', () => {
     const md = [
       '![a](a.svg) ![a](a.svg) ![b](https://x/b.gif)',
@@ -148,7 +148,7 @@ describe('collectRtfAssets', () => {
       'graph TD; A',
       '```',
     ].join('\n');
-    const assets = collectRtfAssets(engine.parse(md).tokens, { math: true, mermaid: true });
+    const assets = collectAssets(engine.parse(md).tokens, { math: true, mermaid: true });
     expect([...assets.images]).toEqual(['a.svg', 'https://x/b.gif']);
     expect(assets.graphics).toEqual([
       { kind: 'math-inline', source: 'x' },
@@ -159,7 +159,7 @@ describe('collectRtfAssets', () => {
   });
 
   it('skips diagrams when Mermaid is disabled', () => {
-    const assets = collectRtfAssets(engine.parse('```mermaid\nA\n```').tokens, {
+    const assets = collectAssets(engine.parse('```mermaid\nA\n```').tokens, {
       math: true,
       mermaid: false,
     });

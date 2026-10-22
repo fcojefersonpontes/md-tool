@@ -1,12 +1,13 @@
 // Renders page 1 of the exported PDF and RTF with LibreOffice and puts them side by side.
+import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import puppeteer from 'puppeteer-core';
-import { findBrowser } from '../browser.mjs';
+import { PNG } from 'pngjs';
 
 const SOFFICE = 'C:\\Program Files\\LibreOffice\\program\\soffice.com';
+const FONT = 'C:\\Windows\\Fonts\\segoeuib.ttf';
 
 /** `demo.pdf` and `demo.rtf` in `dir` -> `target` PNG; skipped without LibreOffice. */
 export async function renderOutputs(dir, target) {
@@ -14,46 +15,60 @@ export async function renderOutputs(dir, target) {
     console.warn('LibreOffice not found; skipping', target);
     return;
   }
-  const pngDir = path.join(dir, 'pages');
-  mkdirSync(pngDir, { recursive: true });
   const profile = pathToFileURL(path.join(dir, 'lo-profile')).href;
-  // Writer exports the first page of the RTF.
-  execFileSync(SOFFICE, [
-    '--headless',
-    '--norestore',
-    `-env:UserInstallation=${profile}`,
-    '--convert-to',
-    'png',
-    '--outdir',
-    pngDir,
-    path.join(dir, 'demo.rtf'),
-  ]);
-  const dataUrl = (file) => `data:image/png;base64,${readFileSync(file).toString('base64')}`;
-
-  const browser = await puppeteer.launch({ executablePath: findBrowser(), headless: true });
-  try {
-    // The PDF in the browser's own viewer (LibreOffice's PDF import garbles KaTeX).
-    const viewer = await browser.newPage();
-    await viewer.setViewport({ width: 794, height: 1123 });
-    await viewer.goto(`${pathToFileURL(path.join(dir, 'demo.pdf')).href}#toolbar=0&view=Fit`);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const pdfPage = path.join(pngDir, 'demo-pdf.png');
-    await viewer.screenshot({ path: pdfPage });
-    const page = (file) => dataUrl(file === 'demo.pdf' ? pdfPage : path.join(pngDir, 'demo.png'));
-
-    const tab = await browser.newPage();
-    await tab.setViewport({ width: 1280, height: 860, deviceScaleFactor: 1 });
-    await tab.setContent(`<!doctype html><style>
-      body { margin: 0; background: #1f1f1f; font: 600 18px 'Segoe UI', sans-serif; color: #ccc;
-             display: flex; gap: 48px; justify-content: center; padding: 28px; }
-      figure { margin: 0; text-align: center; }
-      img { height: 760px; box-shadow: 0 6px 24px #000a; background: #fff; display: block; }
-      figcaption { margin-top: 14px; }
-    </style>
-    <figure><img src="${page('demo.pdf')}"><figcaption>PDF</figcaption></figure>
-    <figure><img src="${page('demo.rtf')}"><figcaption>RTF (LibreOffice Writer)</figcaption></figure>`);
-    await tab.screenshot({ path: target });
-  } finally {
-    await browser.close();
+  const pages = {};
+  for (const file of ['demo.pdf', 'demo.rtf']) {
+    // Draw opens the PDF, Writer the RTF; both export their first page.
+    const out = path.join(dir, 'pages', file.replace('.', '-'));
+    mkdirSync(out, { recursive: true });
+    execFileSync(SOFFICE, [
+      '--headless',
+      '--norestore',
+      `-env:UserInstallation=${profile}`,
+      '--convert-to',
+      'png',
+      '--outdir',
+      out,
+      path.join(dir, file),
+    ]);
+    pages[file] = readFileSync(path.join(out, 'demo.png'));
   }
+
+  const size = (png) => {
+    const { width, height } = PNG.sync.read(png);
+    return { width, height };
+  };
+  const height = 760;
+  const figure = (png, x, caption) => {
+    const page = size(png);
+    const width = Math.round((page.width * height) / page.height);
+    return {
+      width,
+      svg:
+        `<rect x="${x + 4}" y="34" width="${width}" height="${height}" fill="#000" opacity=".45"/>` +
+        `<rect x="${x}" y="28" width="${width}" height="${height}" fill="#fff"/>` +
+        `<image x="${x}" y="28" width="${width}" height="${height}" ` +
+        `href="data:image/png;base64,${png.toString('base64')}"/>` +
+        `<text x="${x + width / 2}" y="${height + 70}" text-anchor="middle" ` +
+        `font-family="Segoe UI" font-weight="bold" font-size="18" fill="#ccc">${caption}</text>`,
+    };
+  };
+  const pdf = figure(pages['demo.pdf'], 0, 'PDF');
+  const rtf = figure(pages['demo.rtf'], 0, 'RTF (LibreOffice Writer)');
+  const gap = 48;
+  const left = Math.round((1280 - pdf.width - rtf.width - gap) / 2);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="860">` +
+    `<rect width="1280" height="860" fill="#1f1f1f"/>` +
+    `<g transform="translate(${left} 0)">${pdf.svg}</g>` +
+    `<g transform="translate(${left + pdf.width + gap} 0)">${rtf.svg}</g></svg>`;
+
+  await initWasm(readFileSync('node_modules/@resvg/resvg-wasm/index_bg.wasm'));
+  const font = existsSync(FONT) ? [readFileSync(FONT)] : [];
+  const png = new Resvg(svg, {
+    font: { fontBuffers: font, defaultFontFamily: 'Segoe UI', loadSystemFonts: false },
+  })
+    .render()
+    .asPng();
+  writeFileSync(target, png);
 }

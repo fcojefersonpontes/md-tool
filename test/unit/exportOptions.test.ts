@@ -83,11 +83,11 @@ describe('parsePageSize', () => {
 describe('parseDocumentMeta', () => {
   it('reads title and pdf overrides', () => {
     const meta = parseDocumentMeta(
-      'title: Relatório\npdf:\n  format: letter\n  landscape: true\n  margin: 10mm\n  footerTemplate: "<b>x</b>"',
+      'title: Relatório\npdf:\n  format: letter\n  landscape: true\n  margin: 10mm\n  footer: "Página {page}"',
     );
     expect(meta).toEqual({
       title: 'Relatório',
-      pdf: { pageSize: 'Letter', landscape: true, margin: '10mm', footerTemplate: '<b>x</b>' },
+      pdf: { pageSize: 'Letter', landscape: true, margin: '10mm', footer: 'Página {page}' },
     });
   });
 
@@ -104,8 +104,8 @@ describe('resolvePdfOptions', () => {
     pageSize: 'A4',
     landscape: false,
     margin: fallback,
-    headerTemplate: '',
-    footerTemplate: 'footer',
+    header: '',
+    footer: 'footer',
   };
 
   it('keeps defaults without overrides', () => {

@@ -6,7 +6,7 @@ import markdownItKatex from '@vscode/markdown-it-katex';
 import katex from 'katex';
 import type { HighlighterCore } from 'shiki/core';
 import { escapeHtml } from './html';
-import { getHighlighter, highlight } from './highlighter';
+import { getHighlighter, highlight, highlightTokens } from './highlighter';
 import { Slugger } from './slugify';
 
 export interface EngineOptions {
@@ -95,6 +95,11 @@ export class MarkdownEngine {
     const frontMatter = tokens.find((token) => token.type === 'front_matter')?.meta as
       string | undefined;
     return { tokens, headings: env.headings, frontMatter };
+  }
+
+  /** Highlighted lines of code (light theme), or `undefined` for unknown languages. */
+  highlightTokens(code: string, lang: string): { content: string; color?: string }[][] | undefined {
+    return highlightTokens(this.highlighter, code, lang);
   }
 
   render(text: string, options: RenderOptions = {}): RenderResult {

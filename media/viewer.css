@@ -1,0 +1,246 @@
+/* md-tool document viewers (PDF and RTF). */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-foreground, #cccccc);
+  font-family: var(--vscode-font-family, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+}
+
+.toolbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--vscode-editorWidget-background, #252526);
+  border-bottom: 1px solid var(--vscode-editorWidget-border, transparent);
+  user-select: none;
+}
+
+.toolbar button {
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.toolbar button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+}
+
+.toolbar .zoom {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+.toolbar .pages {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.scroller {
+  position: absolute;
+  inset: 32px 0 0;
+  overflow: auto;
+}
+
+.message {
+  margin: 24px;
+  color: var(--vscode-errorForeground, #f48771);
+  white-space: pre-wrap;
+}
+
+/* Pages: white sheets on the editor background. */
+.pages-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.page {
+  position: relative;
+  flex: none;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* --- PDF ------------------------------------------------------------------ */
+
+.page canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.page .link {
+  position: absolute;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.page .link:hover {
+  background: rgba(9, 105, 218, 0.12);
+}
+
+/* pdf.js text layer: transparent text over the canvas, so it can be selected. */
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 1;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.textLayer .markedContent {
+  display: contents;
+}
+
+.textLayer ::selection {
+  background: rgba(0, 0, 255, 0.25);
+  color: transparent;
+}
+
+.textLayer br::selection {
+  background: transparent;
+}
+
+.textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+.textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+/* --- RTF ------------------------------------------------------------------ */
+
+.rtf {
+  box-sizing: border-box;
+  color: #000000;
+  font-family: 'Times New Roman', serif;
+  font-size: 12pt;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  tab-size: 48px;
+}
+
+.rtf :is(p, h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  font: inherit;
+}
+
+.rtf .marker {
+  display: inline-block;
+  text-indent: 0;
+}
+
+.rtf a[href] {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rtf img {
+  vertical-align: baseline;
+}
+
+.rtf table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.rtf :is(td, th) {
+  padding: 2px 6px;
+  border: 1px solid #c8ced6;
+  vertical-align: top;
+  text-align: left;
+  font-weight: inherit;
+  white-space: pre-wrap;
+}
+
+.rtf hr.page-break {
+  margin: 24px 0;
+  border: none;
+  border-top: 1px dashed #c8ced6;
+}
+
+.rtf .footnotes {
+  margin-top: 24px;
+}
+
+.rtf .footnotes hr {
+  width: 33%;
+  margin: 0 0 8px;
+  border: none;
+  border-top: 1px solid #c8ced6;
+}
+
+.rtf .footnotes ol {
+  margin: 0;
+  padding-left: 24px;
+}

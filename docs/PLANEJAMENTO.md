@@ -35,7 +35,7 @@ Extensão para **visualizar, editar e exportar (PDF / RTF)** arquivos Markdown (
 | Realce de código     | `shiki`                                                                                        | Usa as gramáticas TextMate do VS Code, cores iguais às do editor              |
 | Diagramas            | `mermaid` (só no webview e no navegador headless)                                              | Precisa de JS para renderizar                                                 |
 | Sanitização          | `DOMPurify` (no webview) / `html: false` configurável                                          | Segurança contra HTML malicioso no `.md`                                      |
-| PDF                  | `puppeteer-core` + Chrome/Edge já instalado na máquina                                         | Fidelidade total ao HTML/CSS e Mermaid. Sem empacotar o Chromium (~150 MB)    |
+| PDF                  | `pdfkit` + `svg-to-pdfkit` + MathJax (antes: `puppeteer-core` + Chrome/Edge)                   | Sem navegador; ver "Exportação nativa" na seção 7                             |
 | RTF                  | Conversor próprio (token stream → RTF)                                                         | Não existe biblioteca JS madura para isso; RTF é texto e dá para gerar direto |
 | RTF (alternativa)    | Pandoc, se estiver instalado                                                                   | Backend opcional via configuração                                             |
 | Testes unitários     | `vitest`                                                                                       | Para o núcleo, que não depende do VS Code                                     |
@@ -157,6 +157,8 @@ Decisões tomadas na implementação (Fase 3):
 
 ### 4.3 Exportação para PDF
 
+> Substituído: o PDF não usa mais navegador. O desenho atual está em "Exportação nativa", na seção 7. O texto abaixo registra o primeiro desenho.
+
 Fluxo:
 
 1. `MarkdownEngine` → HTML do corpo.
@@ -272,6 +274,25 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
   - O HTML das fórmulas vinha do KaTeX 0.16 (cópia interna do `@vscode/markdown-it-katex`) com o CSS do 0.19, e os subscritos saíam desalinhados no preview e no PDF. Agora o plugin recebe o KaTeX 0.19, e um `overrides` do npm remove a cópia antiga.
   - No tema `auto`, um documento curto deixava uma faixa com a cor do GitHub abaixo do conteúdo.
 
+### Exportação nativa (depois da Fase 4)
+
+Uma atualização pendente do Edge fazia o `puppeteer` falhar ao abrir o navegador ("Failed to launch the browser process: Code: 0"), e a exportação para PDF parava de funcionar. A decisão foi não depender de navegador nenhum:
+
+- **PDF**: diagramado pela própria extensão com o `pdfkit` (JavaScript puro). Quebra de linha, listas, citações, tabelas com largura de coluna calculada, código com as cores do shiki (tema GitHub Light), notas de rodapé, links internos e externos, marcadores (outline) e cabeçalho/rodapé em texto com `{page}`, `{pages}`, `{title}` e `{date}`.
+- **Fontes**: as do sistema, encontradas lendo só a tabela de nomes dos arquivos (`src/core/fonts`). Padrões por plataforma (Segoe UI/Consolas, Helvetica Neue/Menlo, DejaVu Sans/DejaVu Sans Mono) e fontes de reserva por caractere (símbolos, CJK). Sem nenhuma fonte, usa as 14 fontes padrão do PDF.
+- **Fórmulas**: MathJax 3 (`mathjax-full`) gera SVG só com caminhos, desenhado como vetor no PDF. O MathJax 4 ficou de fora porque carrega 10 MB de dados de fonte sob demanda.
+- **Mermaid**: precisa de um mecanismo de layout HTML. É desenhado num webview temporário do próprio VS Code, com rótulos em SVG puro e estilos aplicados nos elementos, porque o `svg-to-pdfkit` não lê `<style>`.
+- **RTF**: fórmulas, diagramas e imagens SVG/GIF/WebP viram PNG com o resvg (WebAssembly).
+- O `puppeteer` passou a ser dependência só de desenvolvimento, usada nos testes do preview.
+- Configurações: `mdTool.export.fontFamily`, `codeFontFamily` e `fontSize` (PDF e RTF), `mdTool.pdf.header` e `footer`. Saíram `mdTool.pdf.executablePath`, `headerTemplate`, `footerTemplate` e `mdTool.rtf.*`.
+
+### Visualizador de PDF e RTF (depois da exportação nativa)
+
+Para conferir a exportação sem sair do VS Code, há um editor somente leitura (`CustomReadonlyEditorProvider`, `src/viewer`) para `.pdf` e `.rtf`. Ele é aberto pelo botão **Visualizar** da notificação, pelo Explorer ou por **Reabrir Editor Com…**. Tem prioridade `option`, para não tomar o lugar de outros editores desses arquivos, e recarrega quando o arquivo muda.
+
+- **PDF**: `pdfjs-dist`, no build legacy, que roda no Chromium do VS Code 1.90. As páginas são desenhadas em canvas quando entram na tela, com camada de texto para seleção e com links: URLs abrem fora, e destinos internos rolam até a página. O worker do pdf.js é carregado de uma URL `blob:`, porque o webview não aceita workers de outra origem.
+- **RTF**: leitor próprio (`src/core/rtf/RtfReader.ts`) que converte RTF em HTML no extension host. A biblioteca `rtf.js` foi avaliada e descartada: não lê tabelas, está parada desde 2022 e pesa 2,1 MB. O leitor cobre o que o exportador gera e o que é comum no Word e no LibreOffice: formatação, títulos por `\outlinelevel` ou por estilo, listas, tabelas, campos HYPERLINK, bookmarks, notas, imagens PNG/JPEG, code pages e `\u`. O texto é sempre escapado, e o CSP do webview bloqueia scripts.
+
 ### Fase 5: Opcional / futuro
 
 - Editor WYSIWYG via `CustomTextEditorProvider` (Milkdown ou Tiptap), sincronizado com o `TextDocument`.
@@ -292,14 +313,14 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 
 ## 9. Riscos e mitigações
 
-| Risco                                                    | Mitigação                                                                                                                       |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Nenhum Chrome/Edge na máquina (Linux mínimo)             | Mensagem com instruções + `executablePath`; opcionalmente baixar Chromium sob demanda (`@puppeteer/browsers`) com consentimento |
-| Tamanho do `.vsix` (shiki, mermaid, katex)               | Bundle separado para o webview, carregamento sob demanda de linguagens do shiki, `.vscodeignore` rigoroso                       |
-| RTF com layout limitado (tabelas complexas, imagens SVG) | Documentar limitações; rasterizar SVG; opção Pandoc                                                                             |
-| HTML malicioso no `.md` (XSS no webview)                 | `allowHtml=false` por padrão, DOMPurify, CSP com nonce, Workspace Trust                                                         |
-| Performance em arquivos grandes (> 1 MB)                 | Debounce adaptativo, renderização incremental por bloco (futuro), desligar Mermaid acima de um limite                           |
-| Conflito de atalhos (`Ctrl+B` abre a sidebar)            | Atalhos sempre com `when: editorTextFocus && editorLangId == markdown`                                                          |
+| Risco                                                    | Mitigação                                                                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Nenhum Chrome/Edge na máquina (Linux mínimo)             | Resolvido: a exportação não usa navegador (seção 7, "Exportação nativa")                                  |
+| Tamanho do `.vsix` (shiki, mermaid, katex)               | Bundle separado para o webview, carregamento sob demanda de linguagens do shiki, `.vscodeignore` rigoroso |
+| RTF com layout limitado (tabelas complexas, imagens SVG) | Documentar limitações; rasterizar SVG; opção Pandoc                                                       |
+| HTML malicioso no `.md` (XSS no webview)                 | `allowHtml=false` por padrão, DOMPurify, CSP com nonce, Workspace Trust                                   |
+| Performance em arquivos grandes (> 1 MB)                 | Debounce adaptativo, renderização incremental por bloco (futuro), desligar Mermaid acima de um limite     |
+| Conflito de atalhos (`Ctrl+B` abre a sidebar)            | Atalhos sempre com `when: editorTextFocus && editorLangId == markdown`                                    |
 
 ---
 
@@ -308,6 +329,6 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 1. **Nome e publisher:** `JefersonPontes.md-tool`, exibido como "MD tool".
 2. **Idioma da UI:** pt-BR e en desde a v1.
 3. **WYSIWYG:** fica para a Fase 5; o editor nativo com o preview atende a v1.
-4. **Download automático de Chromium:** não; só o navegador do sistema ou `mdTool.pdf.executablePath`.
+4. **Navegador para exportar:** nenhum; PDF e RTF são gerados pela extensão.
 5. **Licença:** MIT.
 6. **Repositório:** https://github.com/fcojefersonpontes/md-tool

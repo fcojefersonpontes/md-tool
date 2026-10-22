@@ -19,12 +19,11 @@
   "config.export.pageSize": "Tamanho da página nas exportações PDF e RTF.",
   "config.export.landscape": "Usar orientação paisagem nas exportações PDF e RTF.",
   "config.export.margin": "Margens da página como comprimento CSS ou abreviação, ex.: `20mm` ou `15mm 20mm`.",
-  "config.pdf.executablePath": "Caminho do Chrome, Edge ou Chromium usado para gerar PDFs. Deixe vazio para detectar automaticamente.",
-  "config.pdf.headerTemplate": "HTML do cabeçalho das páginas do PDF. Use `<span class=\"title\">`, `<span class=\"date\">`, `<span class=\"pageNumber\">` e `<span class=\"totalPages\">`. Vazio para sem cabeçalho.",
-  "config.pdf.footerTemplate": "HTML do rodapé das páginas do PDF (mesmos marcadores do cabeçalho). Vazio para sem rodapé.",
-  "config.rtf.fontFamily": "Fonte do texto nas exportações RTF.",
-  "config.rtf.codeFontFamily": "Fonte monoespaçada do código nas exportações RTF.",
-  "config.rtf.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações RTF.",
+  "config.export.fontFamily": "Fonte do texto nas exportações PDF e RTF. Vazio: a padrão do sistema (Segoe UI no Windows, Helvetica Neue no macOS, DejaVu Sans no Linux).",
+  "config.export.codeFontFamily": "Fonte monoespaçada do código nas exportações PDF e RTF. Vazio: a padrão do sistema (Consolas, Menlo, DejaVu Sans Mono).",
+  "config.export.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações PDF e RTF.",
+  "config.pdf.header": "Texto centralizado no topo de cada página do PDF. Marcadores: `{page}`, `{pages}`, `{title}`, `{date}`. Vazio para sem cabeçalho.",
+  "config.pdf.footer": "Texto centralizado no pé de cada página do PDF (mesmos marcadores do cabeçalho). Vazio para sem rodapé.",
   "command.toggleBold": "Alternar Negrito",
   "command.toggleItalic": "Alternar Itálico",
   "command.toggleStrikethrough": "Alternar Tachado",
@@ -39,5 +38,8 @@
   "config.editor.formatTables": "Fornecer um formatador de Markdown (Formatar Documento / Formatar Seleção) que alinha tabelas.",
   "config.toc.minLevel": "Menor nível de título incluído no sumário.",
   "config.toc.maxLevel": "Maior nível de título incluído no sumário.",
-  "config.toc.updateOnSave": "Atualizar o sumário entre `<!-- toc -->` e `<!-- tocstop -->` ao salvar."
+  "config.toc.updateOnSave": "Atualizar o sumário entre `<!-- toc -->` e `<!-- tocstop -->` ao salvar.",
+  "command.openViewer": "Abrir no Visualizador de PDF / RTF",
+  "viewer.pdf": "Visualizador de PDF do MD tool",
+  "viewer.rtf": "Visualizador de RTF do MD tool"
 }

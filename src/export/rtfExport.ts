@@ -1,49 +1,72 @@
+import * as fs from 'node:fs/promises';
 import * as vscode from 'vscode';
-import { getEngineOptions, getExportConfig, getRtfConfig } from '../config';
-import { lengthToTwips, pageSizeTwips, parseDocumentMeta } from '../core/exportOptions';
-import { collectRtfAssets, graphicKey, type GraphicKind } from '../core/rtf/assets';
-import { readImage, type RtfImage } from '../core/rtf/images';
-import { renderRtf, type RtfWarning } from '../core/rtf/RtfRenderer';
-import type { RasterImage, RasterJob } from './browser';
-import { findBrowser, loadBrowserModule } from './browserModule';
+import { getEngineOptions, getExportConfig, getFontConfig } from '../config';
 import {
-  documentTitle,
-  type ExportContext,
-  resolveLocalResource,
-  toFileUrl,
-} from './exportContext';
+  collectAssets,
+  type ExportWarning,
+  graphicKey,
+  type GraphicKind,
+} from '../core/exportAssets';
+import { lengthToTwips, pageSizeTwips, parseDocumentMeta } from '../core/exportOptions';
+import type { Picture } from '../core/graphics/pictures';
+import { readImage, type RtfImage } from '../core/rtf/images';
+import { renderRtf } from '../core/rtf/RtfRenderer';
+import { renderDiagrams } from './diagrams';
+import { documentTitle, type ExportContext } from './exportContext';
+import { loadExporter } from './exporterModule';
+import { loadPictures } from './pictures';
 
-/** Remote images larger than this are not embedded. */
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const REMOTE_IMAGE_TIMEOUT_MS = 10_000;
+/** Pictures are drawn at twice their display size, so they stay sharp when printed. */
+const SCALE = 2;
+const PX_PER_PT = 96 / 72;
 
-export async function exportRtf(context: ExportContext): Promise<RtfWarning[]> {
+type Exporter = Awaited<ReturnType<typeof loadExporter>>;
+
+export async function exportRtf(context: ExportContext): Promise<ExportWarning[]> {
   const { document, engine, signal } = context;
+  const exporter = await loadExporter();
   const parsed = engine.parse(document.getText());
   const meta = parseDocumentMeta(parsed.frontMatter);
-  const assets = collectRtfAssets(parsed.tokens, getEngineOptions(document.uri));
-  const rtf = getRtfConfig(document.uri);
+  const assets = collectAssets(parsed.tokens, getEngineOptions(document.uri));
+  const fontConfig = getFontConfig(document.uri);
+  const fonts = exporter.resolveFonts(exporter.systemFontIndex(), process.platform, fontConfig);
 
-  // PNG / JPEG embed directly; everything else is drawn by the browser, if there is one.
+  const [pictures, diagrams] = await Promise.all([
+    loadPictures(document.uri, assets.images, signal, exporter),
+    renderDiagrams(
+      context.extensionUri,
+      assets.graphics.filter((g) => g.kind === 'mermaid').map((g) => g.source),
+      signal,
+    ),
+  ]);
+  signal.throwIfAborted();
+
+  // SVG text (diagram labels, text in images) is drawn with the body font.
+  const svgFonts = await readFonts([fonts.body?.regular.file, fonts.body?.bold.file]);
   const images = new Map<string, RtfImage>();
-  const jobs: RasterJob[] = [];
-  await Promise.all(
-    [...assets.images].map(async (src) => {
-      const loaded = await loadImage(document.uri, src, signal);
-      if (loaded.image) images.set(src, loaded.image);
-      else if (loaded.url) jobs.push({ key: imageKey(src), kind: 'image', url: loaded.url });
-    }),
-  );
-  for (const graphic of assets.graphics) {
-    jobs.push({ key: graphicKey(graphic.kind, graphic.source), ...graphic });
+  for (const [src, picture] of pictures) {
+    const image = toRtfImage(picture, exporter, svgFonts, fonts.body?.name);
+    if (image) images.set(src, image);
   }
-  const rasters = await rasterizeJobs(context, jobs, rtf.fontSize);
+
+  // Formulas and diagrams become PNG pictures.
+  const fontPx = fontConfig.fontSize * PX_PER_PT;
+  const graphics = new Map<string, RtfImage>();
+  for (const { kind, source } of assets.graphics) {
+    const image =
+      kind === 'mermaid'
+        ? diagramImage(diagrams.get(source), exporter, svgFonts, fonts.body?.name)
+        : mathImage(source, kind === 'math-block', fontPx * 1.1, exporter);
+    if (image) graphics.set(graphicKey(kind, source), image);
+  }
 
   const { page } = getExportConfig(document.uri);
   const twips = (length: string) => lengthToTwips(length) ?? 1134;
   const result = renderRtf(parsed.tokens, {
     title: documentTitle(document, parsed.headings, meta.title),
-    ...rtf,
+    fontFamily: fontConfig.fontFamily || fonts.body?.name || 'Calibri',
+    codeFontFamily: fontConfig.codeFontFamily || fonts.mono?.name || 'Consolas',
+    fontSize: fontConfig.fontSize,
     page: {
       ...pageSizeTwips(page),
       margin: {
@@ -53,8 +76,8 @@ export async function exportRtf(context: ExportContext): Promise<RtfWarning[]> {
         left: twips(page.margin.left),
       },
     },
-    loadImage: (src) => images.get(src) ?? rasters.get(imageKey(src)),
-    loadGraphic: (kind: GraphicKind, source: string) => rasters.get(graphicKey(kind, source)),
+    loadImage: (src) => images.get(src),
+    loadGraphic: (kind: GraphicKind, source: string) => graphics.get(graphicKey(kind, source)),
   });
 
   // The renderer escapes everything outside ASCII, so the output is plain ASCII.
@@ -62,83 +85,87 @@ export async function exportRtf(context: ExportContext): Promise<RtfWarning[]> {
   return result.warnings;
 }
 
-function imageKey(src: string): string {
-  return `image\n${src}`;
-}
-
-/** Renders formulas, diagrams and non-bitmap images; empty when no browser is installed. */
-async function rasterizeJobs(
-  context: ExportContext,
-  jobs: RasterJob[],
-  fontSizePt: number,
-): Promise<Map<string, RtfImage>> {
-  const images = new Map<string, RtfImage>();
-  const executablePath = jobs.length ? findBrowser(context.document.uri) : undefined;
-  if (!executablePath) return images;
-
-  const asset = (...segments: string[]) =>
-    toFileUrl(vscode.Uri.joinPath(context.extensionUri, ...segments));
-  let rasters: Map<string, RasterImage>;
-  try {
-    rasters = await loadBrowserModule().rasterize({
-      executablePath,
-      jobs,
-      katexCssUrl: asset('dist', 'webview', 'katex', 'katex.min.css'),
-      mermaidScriptUrl: asset('dist', 'webview', 'mermaid.min.js'),
-      fontSizePx: (fontSizePt * 96) / 72,
-      signal: context.signal,
-    });
-  } catch (error) {
-    if (context.signal.aborted) throw error;
-    return images; // the browser failed to start: keep the text fallbacks
-  }
-
-  for (const [key, raster] of rasters) {
-    const image = readImage(raster.png);
-    if (!image) continue;
-    images.set(key, {
-      ...image,
-      display: { width: raster.width, height: raster.height },
-      depth: raster.depth,
-    });
-  }
-  return images;
-}
-
-interface LoadedImage {
-  /** Directly embeddable bitmap. */
-  image?: RtfImage;
-  /** URL the browser can load to rasterize other formats. */
-  url?: string;
-}
-
-async function loadImage(
-  document: vscode.Uri,
-  src: string,
-  signal: AbortSignal,
-): Promise<LoadedImage> {
-  try {
-    const dataUri = /^data:image\/[\w+.-]+;base64,(.*)$/i.exec(src);
-    if (dataUri) {
-      return { image: readImage(Buffer.from(dataUri[1], 'base64')), url: src };
+function toRtfImage(
+  picture: Picture,
+  exporter: Exporter,
+  fonts: Uint8Array[],
+  fontFamily: string | undefined,
+): RtfImage | undefined {
+  switch (picture.kind) {
+    case 'png':
+    case 'jpeg':
+      return picture;
+    case 'svg':
+      return rasterize(
+        picture.svg,
+        picture.width,
+        picture.height,
+        SCALE,
+        exporter,
+        fonts,
+        fontFamily,
+      );
+    case 'bitmap': {
+      // Bitmaps keep their pixel size.
+      const svg = exporter.bitmapSvg(picture.mime, picture.data, picture.width, picture.height);
+      return rasterize(svg, picture.width, picture.height, 1, exporter);
     }
+  }
+}
 
-    if (/^https?:\/\//i.test(src)) {
-      const response = await fetch(src, {
-        signal: AbortSignal.any([signal, AbortSignal.timeout(REMOTE_IMAGE_TIMEOUT_MS)]),
-      });
-      const length = Number(response.headers.get('content-length') ?? 0);
-      if (!response.ok || length > MAX_IMAGE_BYTES) return {};
-      const data = new Uint8Array(await response.arrayBuffer());
-      if (data.length > MAX_IMAGE_BYTES) return {};
-      return { image: readImage(data), url: src };
-    }
+function mathImage(
+  tex: string,
+  display: boolean,
+  emPx: number,
+  exporter: Exporter,
+): RtfImage | undefined {
+  const math = exporter.renderMath(tex, display);
+  if (!math) return undefined;
+  const width = math.width * emPx;
+  const height = (math.height + math.depth) * emPx;
+  const image = rasterize(math.svg, width, height, SCALE, exporter);
+  return image && { ...image, depth: math.depth * emPx };
+}
 
-    const local = resolveLocalResource(document, src);
-    if (!local) return {};
-    const data = await vscode.workspace.fs.readFile(local.uri);
-    return { image: readImage(data), url: toFileUrl(local.uri) };
+function diagramImage(
+  svg: string | undefined,
+  exporter: Exporter,
+  fonts: Uint8Array[],
+  fontFamily: string | undefined,
+): RtfImage | undefined {
+  if (!svg) return undefined;
+  const { width, height } = exporter.svgSize(svg);
+  return rasterize(svg, width, height, SCALE, exporter, fonts, fontFamily);
+}
+
+/** PNG of an SVG at `scale` times its display size (`width` × `height` CSS px). */
+function rasterize(
+  svg: string,
+  width: number,
+  height: number,
+  scale: number,
+  exporter: Exporter,
+  fonts?: Uint8Array[],
+  defaultFontFamily?: string,
+): RtfImage | undefined {
+  try {
+    const png = exporter.svgToPng(svg, {
+      width: width * scale,
+      fonts,
+      defaultFontFamily,
+    });
+    const image = readImage(png);
+    return image && { ...image, display: { width, height } };
   } catch {
-    return {}; // missing or unreadable: the alt text is used instead
+    return undefined;
   }
+}
+
+async function readFonts(files: (string | undefined)[]): Promise<Uint8Array[]> {
+  const fonts: (Uint8Array | undefined)[] = await Promise.all(
+    [...new Set(files)].map((file) =>
+      file ? fs.readFile(file).catch(() => undefined) : undefined,
+    ),
+  );
+  return fonts.filter((font): font is Uint8Array => font !== undefined);
 }

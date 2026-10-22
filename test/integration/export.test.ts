@@ -83,4 +83,14 @@ suite('Export end to end (kitchen sink)', () => {
     const file = await exportAs('mdTool.exportRtf', undefined as unknown as vscode.Uri);
     assert.strictEqual(file, source.fsPath.replace(/\.md$/, '.rtf'));
   });
+
+  test("exports from the preview's title buttons, which pass the panel's URI", async () => {
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(source));
+    await vscode.commands.executeCommand('mdTool.openPreview');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // What VS Code hands an editor/title command while a webview is active.
+    const panel = vscode.Uri.parse('webview-panel:webview-panel/webview-mdTool.preview-test');
+    const file = await exportAs('mdTool.exportRtf', panel);
+    assert.strictEqual(file, source.fsPath.replace(/\.md$/, '.rtf'));
+  });
 });
