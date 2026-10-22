@@ -2,13 +2,29 @@
   "name": "md-tool",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.0.1",
-  "publisher": "jefersonpontes",
-  "private": true,
+  "version": "0.1.0",
+  "publisher": "JefersonPontes",
+  "author": "Jeferson Pontes",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#3b5bdb",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fcojefersonpontes/md-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fcojefersonpontes/md-tool/issues"
+  },
+  "homepage": "https://github.com/fcojefersonpontes/md-tool#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
+    "Formatters",
+    "Visualization",
     "Other"
   ],
   "keywords": [
@@ -16,7 +32,11 @@
     "preview",
     "pdf",
     "rtf",
-    "export"
+    "export",
+    "katex",
+    "mermaid",
+    "table formatter",
+    "toc"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -463,9 +483,10 @@
     "pretest:integration": "npm run compile && tsc -p test/integration/tsconfig.json",
     "test:integration": "vscode-test",
     "vscode:prepublish": "npm run package",
-    "vsix": "vsce package --skip-license --no-dependencies",
+    "vsix": "vsce package --no-dependencies",
     "test:browser": "vitest run --config vitest.browser.config.mts",
-    "pretest:browser": "npm run compile"
+    "pretest:browser": "npm run compile",
+    "screenshots": "npm run compile && node scripts/screenshots/run.mjs"
   },
   "dependencies": {
     "@shikijs/langs": "^4.5.0",
@@ -495,10 +516,18 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
+    "gifenc": "^1.0.3",
     "jsdom": "^29.1.1",
+    "ovsx": "^1.3.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",
     "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "@vscode/markdown-it-katex": {
+      "katex": "$katex"
+    }
   }
 }

@@ -66,6 +66,13 @@ describe('MarkdownEngine', () => {
     expect(html).toContain('katex-display');
   });
 
+  it('renders math with our KaTeX, whose stylesheet is the one shipped', () => {
+    // 0.19 renamed .strut to .katex-strut; the plugin's own 0.16 copy emits the old name.
+    const { html } = engine.render('$R_2$');
+    expect(html).toContain('class="katex-strut"');
+    expect(html).not.toContain('class="strut"');
+  });
+
   it('renders footnotes', () => {
     const { html } = engine.render('Text[^1]\n\n[^1]: Note\n');
     expect(html).toContain('class="footnotes"');

@@ -1,72 +1,50 @@
-# md-tool
+# MD tool
 
-Extensão para VS Code que permite visualizar, editar e exportar Markdown (`.md`) para PDF e RTF.
+Preview, edit and export Markdown to **PDF** and **RTF**, without leaving VS Code.
 
-> Em desenvolvimento. O planejamento está em `docs/PLANEJAMENTO.md`.
+[Leia em português](README.pt-BR.md)
 
-## Funcionalidades
+![Editor and live preview side by side](docs/images/preview.png)
 
-- **Preview ao vivo** lado a lado (`Ctrl+K Alt+V` ou o botão na barra do editor), com scroll sincronizado.
-- GFM (tabelas, task lists clicáveis, notas de rodapé), realce de código, fórmulas KaTeX e diagramas Mermaid.
-- Tema automático (segue o VS Code), claro ou escuro, e CSS personalizado.
-- **Exportar para PDF** (usa o Chrome, Edge ou Chromium instalado) e **para RTF**, pelo menu de
-  contexto do editor, do Explorer ou pelos botões do preview.
-- **Edição**: negrito, itálico, tachado, código e bloco de código (alternam liga/desliga, com
-  vários cursores), inserir link, formatar tabelas, sumário (TOC) e continuação de listas no Enter.
+## Features
 
-### Edição
+- **Live preview** next to the editor (`Ctrl+K Alt+V`), with synchronized scrolling.
+- GitHub-flavored Markdown: tables, clickable task lists, footnotes, front matter.
+- Syntax highlighting, **KaTeX** math and **Mermaid** diagrams.
+- Follows the VS Code theme, or always light or dark; your own CSS on top.
+- **Export to PDF** with the Chrome, Edge or Chromium you already have, looking just like the preview.
+- **Export to RTF** for Word and LibreOffice, with formulas and diagrams embedded as images.
+- **Editing helpers**: bold, italic, strikethrough and code toggles (multi-cursor), links,
+  table formatting, table of contents and list continuation on Enter.
 
-| Comando                                            | Atalho                             | O que faz                                                                                 |
-| -------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| Alternar Negrito / Itálico                         | `Ctrl+B` / `Ctrl+I`                | Envolve a seleção (ou a palavra sob o cursor) em `**` / `_`; de novo, remove              |
-| Alternar Tachado / Código Inline / Bloco de Código | menu de contexto                   | `~~`, `` ` `` e bloco cercado por três crases                                             |
-| Inserir Link                                       | `Ctrl+K L`                         | Pede o endereço (sugere a URL da área de transferência); URL selecionada vira link direto |
-| Formatar Tabelas                                   | `Shift+Alt+F` (Formatar Documento) | Alinha as colunas, respeitando acentos, CJK e emoji                                       |
-| Inserir / Atualizar Sumário                        | menu de contexto                   | Lista os títulos entre `<!-- toc -->` e `<!-- tocstop -->`; atualiza ao salvar            |
-| Enter numa lista                                   | `Enter`                            | Continua `-`, `1.`, `- [ ]` e `>`; num item vazio, encerra a lista                        |
+![Formulas and diagrams in the preview](docs/images/preview-math.png)
 
-Os comandos ficam no submenu **Markdown (md-tool)** do menu de contexto do editor.
+## Export
 
-Outline, recolhimento de seções, completar caminhos e colar/arrastar imagens já vêm na extensão de
-Markdown do VS Code. Para salvar as imagens coladas numa pasta `assets/` ao lado do documento:
+Run **Export to PDF** or **Export to RTF** from the editor's context menu, the Explorer, the
+preview's toolbar or the Command Palette. The file is written next to the Markdown file (see
+`mdTool.export.outputDir`), and a notification lets you open it or show it in its folder.
 
-```json
-"markdown.copyFiles.destination": { "**/*.md": "${documentDirName}/assets/${fileName}" }
-```
+![Export notification](docs/images/export.png)
 
-### Configurações
+The same document, exported:
 
-| Chave                              | Padrão           | Descrição                                    |
-| ---------------------------------- | ---------------- | -------------------------------------------- |
-| `mdTool.preview.theme`             | `auto`           | `auto`, `light` ou `dark`                    |
-| `mdTool.preview.customCss`         | `[]`             | Folhas de estilo extras                      |
-| `mdTool.preview.scrollSync`        | `true`           | Sincronizar rolagem                          |
-| `mdTool.markdown.allowHtml`        | `false`          | Renderizar HTML bruto (sanitizado)           |
-| `mdTool.markdown.math`             | `true`           | Fórmulas KaTeX                               |
-| `mdTool.markdown.mermaid`          | `true`           | Diagramas Mermaid                            |
-| `mdTool.export.outputDir`          | `${fileDirname}` | Pasta de saída (aceita `${workspaceFolder}`) |
-| `mdTool.export.askLocation`        | `false`          | Perguntar onde salvar                        |
-| `mdTool.export.pageSize`           | `A4`             | `A4`, `Letter` ou `Legal`                    |
-| `mdTool.export.landscape`          | `false`          | Orientação paisagem                          |
-| `mdTool.export.margin`             | `20mm`           | Margens (abreviação CSS)                     |
-| `mdTool.pdf.executablePath`        | (auto)           | Navegador usado para o PDF                   |
-| `mdTool.pdf.headerTemplate`        | vazio            | HTML do cabeçalho                            |
-| `mdTool.pdf.footerTemplate`        | nº da página     | HTML do rodapé                               |
-| `mdTool.rtf.fontFamily`            | `Calibri`        | Fonte do RTF                                 |
-| `mdTool.rtf.codeFontFamily`        | `Consolas`       | Fonte do código no RTF                       |
-| `mdTool.rtf.fontSize`              | `11`             | Tamanho da fonte (pt)                        |
-| `mdTool.editor.listContinuation`   | `true`           | Continuar listas no Enter                    |
-| `mdTool.editor.formatTables`       | `true`           | Formatador de Markdown que alinha tabelas    |
-| `mdTool.toc.minLevel` / `maxLevel` | `2` / `3`        | Níveis de título incluídos no sumário        |
-| `mdTool.toc.updateOnSave`          | `true`           | Atualizar o sumário ao salvar                |
+![The exported PDF and the RTF opened in LibreOffice Writer](docs/images/outputs.png)
 
-### Opções por documento
+**PDF** needs Google Chrome, Microsoft Edge or Chromium installed. Nothing is downloaded: the
+extension finds the browser, or uses `mdTool.pdf.executablePath`.
 
-O front-matter pode sobrescrever as opções do PDF:
+**RTF** is written by the extension itself. Formulas, Mermaid diagrams and SVG/GIF/WebP images
+are drawn by the same browser and embedded as PNG; without a browser they fall back to their
+source text (TeX, diagram code, alt text), with a warning.
+
+### Per-document options
+
+Front matter can override the PDF settings:
 
 ```yaml
 ---
-title: Relatório
+title: Quarterly report
 pdf:
   format: Letter
   landscape: true
@@ -75,32 +53,74 @@ pdf:
 ---
 ```
 
-### Fórmulas, diagramas e imagens no RTF
+## Editing
 
-O RTF não sabe desenhar fórmulas, diagramas Mermaid nem imagens SVG/GIF/WebP. Na exportação, a
-extensão usa o mesmo navegador do PDF (Chrome, Edge ou Chromium) para renderizá-los como imagens
-PNG e embuti-las no documento. Sem navegador instalado, fórmulas saem como TeX, diagramas como
-código e essas imagens como o texto alternativo, com um aviso.
+![Lists continue on Enter, Ctrl+B and table formatting](docs/images/editing.gif)
 
-Fórmulas inline ficam alinhadas à linha de base do texto. As que descem abaixo dela (subscritos,
-frações) usam o comando de rebaixamento do RTF, que o LibreOffice ignora; nele, essas fórmulas
-aparecem um pouco acima da linha.
+| Command                             | Shortcut                        | What it does                                                                                |
+| ----------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Toggle Bold / Italic                | `Ctrl+B` / `Ctrl+I`             | Wraps the selection (or the word at the cursor) in `**` / `_`; again to remove it           |
+| Toggle Strikethrough / Code / Block | context menu                    | `~~`, `` ` `` and a fenced code block                                                       |
+| Insert Link                         | `Ctrl+K L`                      | Asks for the URL (suggests the one in the clipboard); a selected URL becomes a link at once |
+| Format Tables                       | `Shift+Alt+F` (Format Document) | Aligns columns, counting accents, CJK and emoji correctly                                   |
+| Insert / Update Table of Contents   | context menu                    | Lists the headings between `<!-- toc -->` and `<!-- tocstop -->`; refreshed on save         |
+| Enter in a list                     | `Enter`                         | Continues `-`, `1.`, `- [ ]` and `>`; on an empty item, ends the list                       |
 
-## Desenvolvimento
+On macOS, use `Cmd` instead of `Ctrl`. The shortcuts only apply to Markdown files, and every
+command is in the **Markdown (MD tool)** submenu of the editor's context menu.
 
-```sh
-npm install
-npm run watch        # build contínuo
+Outline, folding, path completion and pasting or dropping images already come with VS Code's
+built-in Markdown support, so MD tool leaves them alone. To save pasted images in an `assets/`
+folder next to the document:
+
+```json
+"markdown.copyFiles.destination": { "**/*.md": "${documentDirName}/assets/${fileName}" }
 ```
 
-Pressione `F5` no VS Code para abrir o Extension Development Host.
+## Settings
 
-| Script                     | Função                                                               |
-| -------------------------- | -------------------------------------------------------------------- |
-| `npm run compile`          | Verifica tipos e gera `dist/`                                        |
-| `npm run lint`             | ESLint                                                               |
-| `npm run format`           | Prettier                                                             |
-| `npm test`                 | Testes unitários (vitest)                                            |
-| `npm run test:browser`     | Testes do preview e do PDF num navegador real (Chrome/Edge)          |
-| `npm run test:integration` | Testes dentro do VS Code (baixa o VS Code 1.90 na primeira execução) |
-| `npm run vsix`             | Gera o pacote `.vsix`                                                |
+| Setting                            | Default          | Description                                       |
+| ---------------------------------- | ---------------- | ------------------------------------------------- |
+| `mdTool.preview.theme`             | `auto`           | `auto` (follows VS Code), `light` or `dark`       |
+| `mdTool.preview.customCss`         | `[]`             | Extra stylesheets for the preview and the PDF     |
+| `mdTool.preview.scrollSync`        | `true`           | Synchronize scrolling                             |
+| `mdTool.markdown.allowHtml`        | `false`          | Render raw HTML (sanitized)                       |
+| `mdTool.markdown.math`             | `true`           | KaTeX math                                        |
+| `mdTool.markdown.mermaid`          | `true`           | Mermaid diagrams                                  |
+| `mdTool.export.outputDir`          | `${fileDirname}` | Output folder (also accepts `${workspaceFolder}`) |
+| `mdTool.export.askLocation`        | `false`          | Ask where to save                                 |
+| `mdTool.export.pageSize`           | `A4`             | `A4`, `Letter` or `Legal`                         |
+| `mdTool.export.landscape`          | `false`          | Landscape orientation                             |
+| `mdTool.export.margin`             | `20mm`           | Page margins (CSS shorthand)                      |
+| `mdTool.pdf.executablePath`        | (auto)           | Browser used for the PDF                          |
+| `mdTool.pdf.headerTemplate`        | empty            | Header HTML                                       |
+| `mdTool.pdf.footerTemplate`        | page number      | Footer HTML                                       |
+| `mdTool.rtf.fontFamily`            | `Calibri`        | RTF body font                                     |
+| `mdTool.rtf.codeFontFamily`        | `Consolas`       | RTF code font                                     |
+| `mdTool.rtf.fontSize`              | `11`             | RTF font size (pt)                                |
+| `mdTool.editor.listContinuation`   | `true`           | Continue lists on Enter                           |
+| `mdTool.editor.formatTables`       | `true`           | Register the table formatter for Markdown         |
+| `mdTool.toc.minLevel` / `maxLevel` | `2` / `3`        | Heading levels in the table of contents           |
+| `mdTool.toc.updateOnSave`          | `true`           | Refresh the table of contents on save             |
+
+## Security and privacy
+
+- The preview runs with a strict Content Security Policy, and any HTML is sanitized.
+- In [untrusted workspaces](https://code.visualstudio.com/docs/editor/workspace-trust), raw
+  HTML, custom stylesheets and a custom browser path are disabled.
+- MD tool collects **no telemetry** and makes no network requests of its own. Remote images in
+  a document are loaded by the preview, like in any Markdown viewer.
+
+## Known limitations
+
+- Inline formulas in RTF are lowered to the baseline with the RTF `\dn` command, which
+  LibreOffice ignores: there, formulas with subscripts or fractions sit slightly above the line.
+- PDF export and the images in RTF need a Chromium-based browser installed.
+
+## Requirements
+
+VS Code 1.90 or later. For PDF: Google Chrome, Microsoft Edge or Chromium.
+
+## License
+
+[MIT](LICENSE). Third-party licenses are in `THIRD-PARTY-NOTICES.txt` inside the package.

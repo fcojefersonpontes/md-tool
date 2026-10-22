@@ -25,7 +25,7 @@ suite('Keybindings', () => {
   let bindings: Binding[];
 
   suiteSetup(async () => {
-    await vscode.extensions.getExtension('jefersonpontes.md-tool')!.activate();
+    await vscode.extensions.getExtension('JefersonPontes.md-tool')!.activate();
     bindings = await defaultKeybindings();
     assert.ok(bindings.length > 500, `parsed only ${bindings.length} keybindings`);
   });

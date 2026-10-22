@@ -262,6 +262,15 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 
 - README com GIFs, ícone, CHANGELOG, `l10n` (pt-BR e en), telemetria desligada.
 - Publicação no VS Code Marketplace e no Open VSX.
+- **Feito:**
+  - README em inglês (exibido no Marketplace) e `README.pt-BR.md`, com imagens capturadas de uma janela real do VS Code por `npm run screenshots` (`scripts/screenshots`, só Windows).
+  - Ícone em `media/icon.svg`, convertido para `media/icon.png` por `scripts/render-icon.mjs`.
+  - LICENSE (MIT) e `dist/THIRD-PARTY-NOTICES.txt`, gerado no build de produção a partir do metafile do esbuild.
+  - CHANGELOG 0.1.0 e CONTRIBUTING.md.
+  - Workflow `release.yml`: ao receber uma tag `vX.Y.Z`, roda os testes e publica no Marketplace e no Open VSX (segredos `VSCE_PAT` e `OVSX_PAT`).
+- **Corrigido durante a captura:**
+  - O HTML das fórmulas vinha do KaTeX 0.16 (cópia interna do `@vscode/markdown-it-katex`) com o CSS do 0.19, e os subscritos saíam desalinhados no preview e no PDF. Agora o plugin recebe o KaTeX 0.19, e um `overrides` do npm remove a cópia antiga.
+  - No tema `auto`, um documento curto deixava uma faixa com a cor do GitHub abaixo do conteúdo.
 
 ### Fase 5: Opcional / futuro
 
@@ -294,10 +303,11 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 
 ---
 
-## 10. Decisões em aberto
+## 10. Decisões
 
-1. **Nome e publisher** no Marketplace (`md-tool`?).
-2. **Idioma da UI:** pt-BR e en desde a v1?
-3. **WYSIWYG:** realmente necessário ou o editor nativo + preview basta?
-4. **Download automático de Chromium:** aceitável ou só usar o navegador do sistema?
-5. **Licença:** MIT?
+1. **Nome e publisher:** `JefersonPontes.md-tool`, exibido como "MD tool".
+2. **Idioma da UI:** pt-BR e en desde a v1.
+3. **WYSIWYG:** fica para a Fase 5; o editor nativo com o preview atende a v1.
+4. **Download automático de Chromium:** não; só o navegador do sistema ou `mdTool.pdf.executablePath`.
+5. **Licença:** MIT.
+6. **Repositório:** https://github.com/fcojefersonpontes/md-tool

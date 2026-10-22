@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b5bdb"/>
+      <stop offset="1" stop-color="#6741d9"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c5cdf5"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="26" fill="url(#bg)"/>
+  <!-- page with a folded corner -->
+  <path d="M30 18h46l24 24v62a8 8 0 0 1-8 8H30a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8z" fill="#fff"/>
+  <path d="M76 18v18a6 6 0 0 0 6 6h18z" fill="url(#fold)"/>
+  <!-- Markdown mark: M and down arrow -->
+  <path d="M33 86V56h9l9 12 9-12h9v30h-9V69l-9 12-9-12v17z" fill="#3b5bdb"/>
+  <path d="M80 56h9v16h8l-12.5 15L72 72h8z" fill="#6741d9"/>
+</svg>

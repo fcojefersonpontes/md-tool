@@ -1,5 +1,5 @@
 {
-  "displayName": "md-tool",
+  "displayName": "MD tool",
   "description": "Preview, edit and export Markdown to PDF and RTF.",
   "capabilities.untrustedWorkspaces": "Raw HTML and custom stylesheets are disabled in untrusted workspaces.",
   "command.openPreview": "Open Preview",
@@ -35,7 +35,7 @@
   "command.formatTables": "Format Tables",
   "command.insertToc": "Insert / Update Table of Contents",
   "command.onEnterKey": "Enter (continue lists)",
-  "submenu.edit": "Markdown (md-tool)",
+  "submenu.edit": "Markdown (MD tool)",
   "config.editor.listContinuation": "Pressing Enter in a list item starts the next item; on an empty item it ends the list.",
   "config.editor.formatTables": "Provide a Markdown formatter (Format Document / Format Selection) that aligns tables.",
   "config.toc.minLevel": "Smallest heading level included in the table of contents.",

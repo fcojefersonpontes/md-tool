@@ -39,7 +39,9 @@ body {
   color: var(--md-fg);
 }
 
-/* In "auto" mode, blend with the editor background instead of GitHub's. */
+/* In "auto" mode, blend with the editor background instead of GitHub's
+   (on html too, or a short document leaves a band below the body). */
+html[data-theme='auto'],
 html[data-theme='auto'] body {
   background: var(--vscode-editor-background, var(--md-bg));
 }

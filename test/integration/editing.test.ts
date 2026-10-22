@@ -55,7 +55,7 @@ function show(editor: vscode.TextEditor): string {
 
 suite('Editing', () => {
   suiteSetup(async () => {
-    await vscode.extensions.getExtension('jefersonpontes.md-tool')!.activate();
+    await vscode.extensions.getExtension('JefersonPontes.md-tool')!.activate();
   });
 
   teardown(async () => {

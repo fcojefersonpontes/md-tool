@@ -34,7 +34,7 @@
   "command.formatTables": "Formatar Tabelas",
   "command.insertToc": "Inserir / Atualizar Sumário",
   "command.onEnterKey": "Enter (continuar listas)",
-  "submenu.edit": "Markdown (md-tool)",
+  "submenu.edit": "Markdown (MD tool)",
   "config.editor.listContinuation": "Enter num item de lista inicia o próximo item; num item vazio, encerra a lista.",
   "config.editor.formatTables": "Fornecer um formatador de Markdown (Formatar Documento / Formatar Seleção) que alinha tabelas.",
   "config.toc.minLevel": "Menor nível de título incluído no sumário.",

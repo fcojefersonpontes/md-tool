@@ -41,7 +41,7 @@ suite('Extension', () => {
 
   test('activates on a Markdown document', async () => {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(file));
-    const ext = vscode.extensions.getExtension('jefersonpontes.md-tool');
+    const ext = vscode.extensions.getExtension('JefersonPontes.md-tool');
     assert.ok(ext, 'extension not found');
     await ext.activate();
     assert.strictEqual(ext.isActive, true);

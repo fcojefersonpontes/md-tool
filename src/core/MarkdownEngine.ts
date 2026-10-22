@@ -3,6 +3,7 @@ import type { PluginSimple, PluginWithOptions, StateBlock, StateCore, Token } fr
 import markdownItFootnote from 'markdown-it-footnote';
 import markdownItFrontMatter from 'markdown-it-front-matter';
 import markdownItKatex from '@vscode/markdown-it-katex';
+import katex from 'katex';
 import type { HighlighterCore } from 'shiki/core';
 import { escapeHtml } from './html';
 import { getHighlighter, highlight } from './highlighter';
@@ -73,7 +74,9 @@ export class MarkdownEngine {
       });
     }
     if (options.math) {
-      this.md.use(markdownItKatex, { enableFencedBlocks: true, throwOnError: false });
+      // Our KaTeX, not the plugin's own (older) copy: the markup must match the
+      // stylesheet shipped in dist/webview/katex, or sub/superscripts misalign.
+      this.md.use(markdownItKatex, { katex, enableFencedBlocks: true, throwOnError: false });
     }
     this.md.core.ruler.after('inline', 'md_tool_headings', headingRule);
     this.md.core.ruler.after('inline', 'md_tool_task_lists', taskListRule);

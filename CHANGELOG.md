@@ -1,39 +1,39 @@
 # Changelog
 
-## Não lançado
+## 0.1.0
 
-- Edição (Fase 3):
-  - Alternar negrito, itálico, tachado, código inline e bloco de código, com vários cursores
-  - Inserir link (URL da área de transferência sugerida; URL selecionada vira link)
-  - Formatador de tabelas (também em Formatar Documento), com largura correta para CJK e emoji
-  - Sumário entre `<!-- toc -->` e `<!-- tocstop -->`, atualizado ao salvar, com os mesmos
-    links do preview
-  - Enter continua listas, listas numeradas, tarefas e citações; num item vazio, encerra a lista
-  - Comentários HTML de bloco (como os marcadores do sumário) não aparecem mais no preview,
-    no PDF e no RTF
+First public release.
 
-- Exportação (Fase 2):
-  - **PDF** com o Chrome/Edge/Chromium instalado (puppeteer-core), fiel ao preview:
-    realce de código, KaTeX, Mermaid, imagens; tamanho de página, orientação, margens,
-    cabeçalho/rodapé com número de página e opções por documento no front-matter (`pdf:`)
-  - **RTF** com conversor próprio: títulos com nível de estrutura e marcadores,
-    links, listas, tarefas, tabelas, código, citações, notas de rodapé e imagens PNG/JPEG;
-    fórmulas KaTeX, diagramas Mermaid e imagens SVG/GIF/WebP são renderizados pelo navegador e
-    embutidos como PNG (sem navegador, saem como código/texto, com aviso)
-  - Comandos no editor, no Explorer e no preview; progresso cancelável e botões
-    "Abrir" / "Mostrar na Pasta"
-  - Testes no navegador (`npm run test:browser`) e arquivo de referência para o RTF
+### Preview
 
-- Preview ao vivo de Markdown (Fase 1):
-  - GFM: tabelas, task lists clicáveis, notas de rodapé, front-matter oculto
-  - Realce de código com shiki (temas claro/escuro do GitHub)
-  - Fórmulas com KaTeX e diagramas Mermaid
-  - Scroll sincronizado entre editor e preview
-  - Links relativos abrem no editor (incluindo `arquivo.md#secao`)
-  - Imagens relativas, tema automático/claro/escuro e CSS personalizado
-  - CSP com nonce, HTML sanitizado com DOMPurify e Workspace Trust
-  - Interface em inglês e português (pt-BR)
+- Live preview beside the editor, with synchronized scrolling in both directions.
+- GitHub-flavored Markdown: tables, clickable task lists, footnotes, hidden front matter.
+- Syntax highlighting (GitHub light and dark themes), KaTeX math and Mermaid diagrams.
+- Relative links open in the editor (including `file.md#section`); relative images load.
+- Automatic, light or dark theme, and custom stylesheets.
+- Strict Content Security Policy, sanitized HTML and Workspace Trust support.
 
-## 0.0.1
+### Export
 
-- Estrutura inicial do projeto (Fase 0).
+- **PDF** through the installed Chrome, Edge or Chromium, matching the preview: page size,
+  orientation, margins, header and footer with page numbers, and per-document options in the
+  front matter (`pdf:`).
+- **RTF** written by the extension: headings with outline levels and bookmarks, links, lists,
+  tasks, tables, code, quotes, footnotes and PNG/JPEG images. Formulas, Mermaid diagrams and
+  SVG/GIF/WebP images are rendered by the browser and embedded as PNG.
+- Commands in the editor, the Explorer and the preview; cancellable progress and
+  "Open" / "Show in Folder" afterwards.
+
+### Editing
+
+- Toggle bold, italic, strikethrough, inline code and code blocks, with multiple cursors.
+- Insert link (suggests the URL in the clipboard; a selected URL becomes a link).
+- Table formatter, also used by Format Document, with correct widths for CJK and emoji.
+- Table of contents between `<!-- toc -->` and `<!-- tocstop -->`, refreshed on save.
+- Enter continues bullet, numbered and task lists and block quotes; on an empty item it ends
+  the list.
+
+### Other
+
+- English and Brazilian Portuguese interface.
+- No telemetry.
