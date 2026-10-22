@@ -135,20 +135,25 @@ md-tool/
 
 ### 4.2 Edição
 
-| Comando                                               | Atalho sugerido                            | Descrição                                                              |
-| ----------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------- |
-| `mdTool.toggleBold`                                   | `Ctrl+B` (when `editorLangId == markdown`) | Envolve/remove `**`                                                    |
-| `mdTool.toggleItalic`                                 | `Ctrl+I`                                   | Envolve/remove `_`                                                     |
-| `mdTool.toggleCode`                                   | `` Ctrl+` ``                               | Código inline / bloco                                                  |
-| `mdTool.insertLink`                                   | `Ctrl+K L`                                 | Pede a URL e insere `[texto](url)`                                     |
-| `mdTool.formatTable`                                  | `Alt+Shift+F` dentro de tabela             | Alinha colunas (respeita largura de CJK/emoji)                         |
-| `mdTool.insertToc` / atualização automática ao salvar | —                                          | Gera um TOC entre marcadores `<!-- toc -->`                            |
-| `mdTool.pasteImage`                                   | `Ctrl+Alt+V`                               | Salva a imagem da área de transferência em `./assets/` e insere o link |
-| Continuação de listas                                 | `Enter`                                    | Continua `-`, `1.`, `- [ ]` automaticamente                            |
+| Comando                                                         | Atalho                                        | Descrição                                      |
+| --------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| `mdTool.toggleBold` / `toggleItalic`                            | `Ctrl+B` / `Ctrl+I` (só em Markdown editável) | Envolve/remove `**` / `_`                      |
+| `mdTool.toggleStrikethrough` / `toggleCode` / `toggleCodeBlock` | — (menu de contexto)                          | `~~`, código inline, bloco cercado             |
+| `mdTool.insertLink`                                             | `Ctrl+K L`                                    | Pede a URL e insere `[texto](url)`             |
+| `mdTool.formatTables` + formatador do documento                 | `Shift+Alt+F`                                 | Alinha colunas (respeita largura de CJK/emoji) |
+| `mdTool.insertToc` / atualização ao salvar                      | —                                             | TOC entre `<!-- toc -->` e `<!-- tocstop -->`  |
+| Continuação de listas (`mdTool.onEnterKey`)                     | `Enter`                                       | Continua `-`, `1.`, `- [ ]`, `>`               |
 
-Extras de baixo custo: `DocumentSymbolProvider` (outline pelos títulos), `FoldingRangeProvider` por seção e `CompletionItemProvider` para caminhos de imagens e links.
+Decisões tomadas na implementação (Fase 3):
 
-> Observação: as APIs nativas de _paste/drop_ (`DocumentPasteEditProvider`, `DocumentDropEditProvider`) cobrem colar e arrastar imagens. Usar essas APIs antes de partir para soluções por SO.
+- **Sem atalho para código inline**: `` Ctrl+` `` abre o terminal, e sobrescrevê-lo no editor de Markdown
+  seria intrusivo. O tachado também ficou sem atalho (`Alt+S` abre o menu Seleção no Windows).
+- **Colar imagem, outline, folding e completar caminhos não foram implementados**: a extensão de
+  Markdown embutida no VS Code já oferece todos (colar/arrastar copia o arquivo para o workspace,
+  configurável por `markdown.copyFiles.destination`). Reimplementar criaria entradas duplicadas no
+  outline e nos menus, e a API de colar (`DocumentPasteEditProvider`) não é estável no VS Code 1.90.
+- **Fim de linha**: as edições usam o EOL do documento informado pelo VS Code; um arquivo de uma
+  linha não revela o EOL pelo texto.
 
 ### 4.3 Exportação para PDF
 
@@ -250,7 +255,7 @@ Renderer próprio que percorre o **token stream** do `markdown-it` (não o HTML)
 
 ### Fase 3: Edição (3–5 dias)
 
-- Comandos de formatação, continuação de listas, formatador de tabelas, TOC, colar imagem, outline e folding.
+- Comandos de formatação, continuação de listas, formatador de tabelas e TOC (colar imagem, outline e folding: nativos do VS Code, ver 4.2).
 - **Pronto quando:** todos os comandos da seção 4.2 têm teste unitário e funcionam com seleção múltipla (multi-cursor).
 
 ### Fase 4: Polimento e publicação (2–3 dias)

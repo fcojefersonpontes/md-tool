@@ -2,6 +2,16 @@
 
 ## Não lançado
 
+- Edição (Fase 3):
+  - Alternar negrito, itálico, tachado, código inline e bloco de código, com vários cursores
+  - Inserir link (URL da área de transferência sugerida; URL selecionada vira link)
+  - Formatador de tabelas (também em Formatar Documento), com largura correta para CJK e emoji
+  - Sumário entre `<!-- toc -->` e `<!-- tocstop -->`, atualizado ao salvar, com os mesmos
+    links do preview
+  - Enter continua listas, listas numeradas, tarefas e citações; num item vazio, encerra a lista
+  - Comentários HTML de bloco (como os marcadores do sumário) não aparecem mais no preview,
+    no PDF e no RTF
+
 - Exportação (Fase 2):
   - **PDF** com o Chrome/Edge/Chromium instalado (puppeteer-core), fiel ao preview:
     realce de código, KaTeX, Mermaid, imagens; tamanho de página, orientação, margens,

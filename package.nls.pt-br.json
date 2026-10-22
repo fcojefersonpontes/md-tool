@@ -24,5 +24,20 @@
   "config.pdf.footerTemplate": "HTML do rodapé das páginas do PDF (mesmos marcadores do cabeçalho). Vazio para sem rodapé.",
   "config.rtf.fontFamily": "Fonte do texto nas exportações RTF.",
   "config.rtf.codeFontFamily": "Fonte monoespaçada do código nas exportações RTF.",
-  "config.rtf.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações RTF."
+  "config.rtf.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações RTF.",
+  "command.toggleBold": "Alternar Negrito",
+  "command.toggleItalic": "Alternar Itálico",
+  "command.toggleStrikethrough": "Alternar Tachado",
+  "command.toggleCode": "Alternar Código Inline",
+  "command.toggleCodeBlock": "Alternar Bloco de Código",
+  "command.insertLink": "Inserir Link",
+  "command.formatTables": "Formatar Tabelas",
+  "command.insertToc": "Inserir / Atualizar Sumário",
+  "command.onEnterKey": "Enter (continuar listas)",
+  "submenu.edit": "Markdown (md-tool)",
+  "config.editor.listContinuation": "Enter num item de lista inicia o próximo item; num item vazio, encerra a lista.",
+  "config.editor.formatTables": "Fornecer um formatador de Markdown (Formatar Documento / Formatar Seleção) que alinha tabelas.",
+  "config.toc.minLevel": "Menor nível de título incluído no sumário.",
+  "config.toc.maxLevel": "Maior nível de título incluído no sumário.",
+  "config.toc.updateOnSave": "Atualizar o sumário entre `<!-- toc -->` e `<!-- tocstop -->` ao salvar."
 }

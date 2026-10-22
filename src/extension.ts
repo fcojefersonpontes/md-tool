@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { ExportFormat } from './core/exportPath';
+import { EditorFeatures } from './editor/EditorFeatures';
 import { EngineProvider } from './engineProvider';
 import { ExportService } from './export/ExportService';
 import { PreviewManager } from './preview/PreviewManager';
@@ -8,6 +9,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const engines = new EngineProvider();
   const previews = new PreviewManager(context.extensionUri, engines);
   const exporter = new ExportService(context.extensionUri, engines);
+  context.subscriptions.push(new EditorFeatures(engines));
 
   /** Explorer / editor-title argument, else the active editor, else the focused preview. */
   const sourceDocument = (arg: unknown): vscode.Uri | undefined => {

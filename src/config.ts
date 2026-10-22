@@ -93,3 +93,36 @@ export function getRtfConfig(scope?: vscode.Uri): RtfConfig {
     fontSize: fontSize > 0 && fontSize <= 72 ? fontSize : 11,
   };
 }
+
+export interface EditorConfig {
+  listContinuation: boolean;
+  formatTables: boolean;
+}
+
+export function getEditorConfig(scope?: vscode.Uri): EditorConfig {
+  const config = vscode.workspace.getConfiguration('mdTool.editor', scope);
+  return {
+    listContinuation: config.get<boolean>('listContinuation', true),
+    formatTables: config.get<boolean>('formatTables', true),
+  };
+}
+
+export interface TocConfig {
+  minLevel: number;
+  maxLevel: number;
+  updateOnSave: boolean;
+}
+
+export function getTocConfig(scope?: vscode.Uri): TocConfig {
+  const config = vscode.workspace.getConfiguration('mdTool.toc', scope);
+  const level = (key: string, fallback: number) => {
+    const value = config.get<number>(key, fallback);
+    return Number.isInteger(value) && value >= 1 && value <= 6 ? value : fallback;
+  };
+  const minLevel = level('minLevel', 2);
+  return {
+    minLevel,
+    maxLevel: Math.max(minLevel, level('maxLevel', 3)),
+    updateOnSave: config.get<boolean>('updateOnSave', true),
+  };
+}

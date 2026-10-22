@@ -1,5 +1,5 @@
 import MarkdownIt from 'markdown-it';
-import type { PluginSimple, PluginWithOptions, StateCore, Token } from 'markdown-it';
+import type { PluginSimple, PluginWithOptions, StateBlock, StateCore, Token } from 'markdown-it';
 import markdownItFootnote from 'markdown-it-footnote';
 import markdownItFrontMatter from 'markdown-it-front-matter';
 import markdownItKatex from '@vscode/markdown-it-katex';
@@ -65,6 +65,13 @@ export class MarkdownEngine {
       () => {},
     );
     this.md.use(markdownItFootnote as unknown as PluginSimple);
+    if (!options.allowHtml) {
+      // Keep `<!-- comments -->` (e.g. TOC markers) invisible even with raw HTML disabled.
+      // Before 'lheading': a setext heading would otherwise swallow the comment line.
+      this.md.block.ruler.before('lheading', 'md_tool_comment', commentBlockRule, {
+        alt: ['paragraph', 'reference', 'blockquote', 'list'],
+      });
+    }
     if (options.math) {
       this.md.use(markdownItKatex, { enableFencedBlocks: true, throwOnError: false });
     }
@@ -96,6 +103,8 @@ export class MarkdownEngine {
 
   private installRenderers(): void {
     const rules = this.md.renderer.rules;
+
+    rules.html_comment = () => '';
 
     rules.front_matter = (tokens, idx, _opts, env) => {
       (env as RenderEnv).frontMatter = tokens[idx].meta as string;
@@ -141,6 +150,37 @@ function dataLineAttr(token: Token): string {
 }
 
 /** Adds `data-line` to every block-level opening token that maps to source lines. */
+/** Block made only of an HTML comment (possibly multi-line), emitted as a hidden token. */
+function commentBlockRule(
+  state: StateBlock,
+  startLine: number,
+  endLine: number,
+  silent: boolean,
+): boolean {
+  if (state.sCount[startLine] - state.blkIndent >= 4) return false;
+  const start = state.bMarks[startLine] + state.tShift[startLine];
+  if (!state.src.startsWith('<!--', start)) return false;
+
+  let line = startLine;
+  for (; line < endLine; line++) {
+    const from = line === startLine ? start + 4 : state.bMarks[line] + state.tShift[line];
+    const close = state.src.slice(from, state.eMarks[line]).indexOf('-->');
+    if (close !== -1) {
+      // Only a comment on its own: `<!-- a --> text` is left to the paragraph rule.
+      if (state.src.slice(from + close + 3, state.eMarks[line]).trim()) return false;
+      break;
+    }
+  }
+  if (line === endLine) return false;
+  if (silent) return true;
+
+  const token = state.push('html_comment', '', 0);
+  token.map = [startLine, line + 1];
+  token.content = state.getLines(startLine, line + 1, state.blkIndent, false);
+  state.line = line + 1;
+  return true;
+}
+
 function sourceLineRule(state: StateCore): void {
   for (const token of state.tokens) {
     if (token.map && token.nesting !== -1 && token.type !== 'inline') {

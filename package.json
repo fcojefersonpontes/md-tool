@@ -60,6 +60,57 @@
         "title": "%command.exportRtf%",
         "category": "md-tool",
         "icon": "$(file-text)"
+      },
+      {
+        "command": "mdTool.toggleBold",
+        "title": "%command.toggleBold%",
+        "category": "md-tool",
+        "icon": "$(bold)"
+      },
+      {
+        "command": "mdTool.toggleItalic",
+        "title": "%command.toggleItalic%",
+        "category": "md-tool",
+        "icon": "$(italic)"
+      },
+      {
+        "command": "mdTool.toggleStrikethrough",
+        "title": "%command.toggleStrikethrough%",
+        "category": "md-tool"
+      },
+      {
+        "command": "mdTool.toggleCode",
+        "title": "%command.toggleCode%",
+        "category": "md-tool",
+        "icon": "$(code)"
+      },
+      {
+        "command": "mdTool.toggleCodeBlock",
+        "title": "%command.toggleCodeBlock%",
+        "category": "md-tool"
+      },
+      {
+        "command": "mdTool.insertLink",
+        "title": "%command.insertLink%",
+        "category": "md-tool",
+        "icon": "$(link)"
+      },
+      {
+        "command": "mdTool.formatTables",
+        "title": "%command.formatTables%",
+        "category": "md-tool",
+        "icon": "$(table)"
+      },
+      {
+        "command": "mdTool.insertToc",
+        "title": "%command.insertToc%",
+        "category": "md-tool",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "mdTool.onEnterKey",
+        "title": "%command.onEnterKey%",
+        "category": "md-tool"
       }
     ],
     "menus": {
@@ -113,9 +164,50 @@
         {
           "command": "mdTool.exportRtf",
           "when": "editorLangId == markdown || activeWebviewPanelId == 'mdTool.preview'"
+        },
+        {
+          "command": "mdTool.toggleBold",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.toggleItalic",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.toggleStrikethrough",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.toggleCode",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.toggleCodeBlock",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.insertLink",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.formatTables",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.insertToc",
+          "when": "editorLangId == markdown && !editorReadonly"
+        },
+        {
+          "command": "mdTool.onEnterKey",
+          "when": "false"
         }
       ],
       "editor/context": [
+        {
+          "submenu": "mdTool.edit",
+          "when": "editorLangId == markdown",
+          "group": "md-tool@0"
+        },
         {
           "command": "mdTool.exportPdf",
           "when": "editorLangId == markdown",
@@ -126,6 +218,40 @@
           "when": "editorLangId == markdown",
           "group": "md-tool@2"
         }
+      ],
+      "mdTool.edit": [
+        {
+          "command": "mdTool.toggleBold",
+          "group": "1_style@1"
+        },
+        {
+          "command": "mdTool.toggleItalic",
+          "group": "1_style@2"
+        },
+        {
+          "command": "mdTool.toggleStrikethrough",
+          "group": "1_style@3"
+        },
+        {
+          "command": "mdTool.toggleCode",
+          "group": "1_style@4"
+        },
+        {
+          "command": "mdTool.toggleCodeBlock",
+          "group": "1_style@5"
+        },
+        {
+          "command": "mdTool.insertLink",
+          "group": "2_insert@1"
+        },
+        {
+          "command": "mdTool.insertToc",
+          "group": "2_insert@2"
+        },
+        {
+          "command": "mdTool.formatTables",
+          "group": "3_format@1"
+        }
       ]
     },
     "keybindings": [
@@ -134,6 +260,29 @@
         "key": "ctrl+k alt+v",
         "mac": "cmd+k alt+v",
         "when": "editorTextFocus && editorLangId == markdown"
+      },
+      {
+        "command": "mdTool.toggleBold",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "editorTextFocus && editorLangId == markdown && !editorReadonly"
+      },
+      {
+        "command": "mdTool.toggleItalic",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "editorTextFocus && editorLangId == markdown && !editorReadonly"
+      },
+      {
+        "command": "mdTool.insertLink",
+        "key": "ctrl+k l",
+        "mac": "cmd+k l",
+        "when": "editorTextFocus && editorLangId == markdown && !editorReadonly"
+      },
+      {
+        "command": "mdTool.onEnterKey",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == markdown && !editorReadonly && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode && config.mdTool.editor.listContinuation"
       }
     ],
     "configuration": {
@@ -259,9 +408,47 @@
           "maximum": 72,
           "scope": "resource",
           "description": "%config.rtf.fontSize%"
+        },
+        "mdTool.editor.listContinuation": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.editor.listContinuation%"
+        },
+        "mdTool.editor.formatTables": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.editor.formatTables%"
+        },
+        "mdTool.toc.minLevel": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 6,
+          "scope": "resource",
+          "description": "%config.toc.minLevel%"
+        },
+        "mdTool.toc.maxLevel": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 6,
+          "scope": "resource",
+          "description": "%config.toc.maxLevel%"
+        },
+        "mdTool.toc.updateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "%config.toc.updateOnSave%"
         }
       }
-    }
+    },
+    "submenus": [
+      {
+        "id": "mdTool.edit",
+        "label": "%submenu.edit%"
+      }
+    ]
   },
   "scripts": {
     "compile": "npm run check-types && node esbuild.mjs",

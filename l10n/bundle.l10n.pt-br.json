@@ -13,5 +13,9 @@
   "Raw HTML was omitted.": "HTML bruto foi omitido.",
   "Some Mermaid diagrams were exported as code (no browser found, or the diagram is invalid).": "Alguns diagramas Mermaid foram exportados como código (navegador não encontrado ou diagrama inválido).",
   "Some formulas were exported as TeX source (no browser found, or the formula is invalid).": "Algumas fórmulas foram exportadas como código TeX (navegador não encontrado ou fórmula inválida).",
-  "Some images could not be embedded and were replaced by their alt text.": "Algumas imagens não puderam ser embutidas e foram substituídas pelo texto alternativo."
+  "Some images could not be embedded and were replaced by their alt text.": "Algumas imagens não puderam ser embutidas e foram substituídas pelo texto alternativo.",
+  "Insert Link": "Inserir Link",
+  "Link address (URL or path)": "Endereço do link (URL ou caminho)",
+  "Tables are already formatted.": "As tabelas já estão formatadas.",
+  "The table of contents is up to date.": "O sumário já está atualizado."
 }

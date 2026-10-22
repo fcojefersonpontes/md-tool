@@ -185,6 +185,8 @@ class RtfWriter {
       case 'html_block':
         if (!token.content.trim().startsWith('<!--')) this.warnings.add('html');
         return i;
+      case 'html_comment':
+        return i;
       case 'footnote_block_open':
         this.rule();
         return i;

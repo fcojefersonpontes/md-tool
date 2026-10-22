@@ -25,5 +25,20 @@
   "config.pdf.footerTemplate": "HTML for the PDF page footer (same placeholders as the header). Empty for no footer.",
   "config.rtf.fontFamily": "Body font for RTF exports.",
   "config.rtf.codeFontFamily": "Monospace font for code in RTF exports.",
-  "config.rtf.fontSize": "Body font size in points for RTF exports."
+  "config.rtf.fontSize": "Body font size in points for RTF exports.",
+  "command.toggleBold": "Toggle Bold",
+  "command.toggleItalic": "Toggle Italic",
+  "command.toggleStrikethrough": "Toggle Strikethrough",
+  "command.toggleCode": "Toggle Inline Code",
+  "command.toggleCodeBlock": "Toggle Code Block",
+  "command.insertLink": "Insert Link",
+  "command.formatTables": "Format Tables",
+  "command.insertToc": "Insert / Update Table of Contents",
+  "command.onEnterKey": "Enter (continue lists)",
+  "submenu.edit": "Markdown (md-tool)",
+  "config.editor.listContinuation": "Pressing Enter in a list item starts the next item; on an empty item it ends the list.",
+  "config.editor.formatTables": "Provide a Markdown formatter (Format Document / Format Selection) that aligns tables.",
+  "config.toc.minLevel": "Smallest heading level included in the table of contents.",
+  "config.toc.maxLevel": "Largest heading level included in the table of contents.",
+  "config.toc.updateOnSave": "Update the table of contents between `<!-- toc -->` and `<!-- tocstop -->` when saving."
 }
