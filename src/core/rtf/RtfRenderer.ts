@@ -1,10 +1,16 @@
 import type { Token } from '../MarkdownEngine';
-import { fenceLanguage, type GraphicKind } from './assets';
+import {
+  decodeFragment,
+  type ExportWarning,
+  fenceLanguage,
+  footnoteNumber,
+  type GraphicKind,
+} from '../exportAssets';
 import { escapeRtf } from './escape';
 import { imageToRtf, type RtfImage } from './images';
 
 /** Content that has no RTF equivalent and was exported in a degraded form. */
-export type RtfWarning = 'mermaid' | 'math' | 'html' | 'image';
+export type RtfWarning = ExportWarning;
 
 export interface RtfOptions {
   title?: string;
@@ -326,7 +332,8 @@ class RtfWriter {
     if (columns === 0) return end;
 
     // Size columns to their longest cell (like the HTML table), shrinking to fit the page.
-    const charWidth = this.options.fontSize * 11; // ~0.55em in twips
+    // ~0.6em per character in twips (bold headers are wider than the average).
+    const charWidth = this.options.fontSize * 12;
     const widths = Array.from({ length: columns }, (_, c) => {
       const chars = Math.max(...rows.map((row) => row.cells[c]?.inline?.content.length ?? 0));
       return (Math.min(60, Math.max(3, chars)) + 2) * charWidth;
@@ -452,17 +459,5 @@ class RtfWriter {
     if (image) return this.picture(image);
     this.warnings.add('image');
     return `[${escapeRtf(token.content || src)}]`;
-  }
-}
-
-function footnoteNumber(token: Token): number {
-  return ((token.meta as { id?: number } | null)?.id ?? 0) + 1;
-}
-
-function decodeFragment(fragment: string): string {
-  try {
-    return decodeURIComponent(fragment);
-  } catch {
-    return fragment;
   }
 }

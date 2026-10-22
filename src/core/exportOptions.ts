@@ -26,8 +26,9 @@ export interface PageOptions {
 }
 
 export interface PdfOptions extends PageOptions {
-  headerTemplate: string;
-  footerTemplate: string;
+  /** Text with `{page}`, `{pages}`, `{title}` and `{date}` placeholders. */
+  header: string;
+  footer: string;
 }
 
 /** PDF settings a document can override in its YAML front matter. */
@@ -118,7 +119,7 @@ export function parseDocumentMeta(frontMatter: string | undefined): DocumentMeta
     if (pageSize) meta.pdf.pageSize = pageSize;
     if (typeof options.landscape === 'boolean') meta.pdf.landscape = options.landscape;
     if (options.margin !== undefined) meta.pdf.margin = options.margin;
-    for (const key of ['headerTemplate', 'footerTemplate'] as const) {
+    for (const key of ['header', 'footer'] as const) {
       if (typeof options[key] === 'string') meta.pdf[key] = options[key];
     }
   }
@@ -133,6 +134,12 @@ export function resolvePdfOptions(defaults: PdfOptions, overrides: PdfOverrides)
     ...rest,
     margin: margin === undefined ? defaults.margin : parseMargin(margin, defaults.margin),
   };
+}
+
+/** Converts a CSS length to points; `undefined` if invalid. */
+export function lengthToPoints(length: string): number | undefined {
+  const twips = lengthToTwips(length);
+  return twips === undefined ? undefined : twips / 20;
 }
 
 /** Page size in twips, honouring orientation. */

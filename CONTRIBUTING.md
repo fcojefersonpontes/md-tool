@@ -18,7 +18,7 @@ Press `F5` in VS Code to open an Extension Development Host. The plan and design
 | `npm run lint`             | ESLint                                                                 |
 | `npm run format`           | Prettier                                                               |
 | `npm test`                 | Unit tests (vitest)                                                    |
-| `npm run test:browser`     | Preview and PDF tests in a real browser (Chrome/Edge)                  |
+| `npm run test:browser`     | Preview webview tests in Chrome/Edge (development only)                |
 | `npm run test:integration` | Tests inside VS Code (downloads VS Code 1.90 on the first run)         |
 | `npm run vsix`             | Production build and `.vsix` package (with `THIRD-PARTY-NOTICES.txt`)  |
 | `npm run screenshots`      | Recaptures the README images from a real VS Code window (Windows only) |
@@ -28,6 +28,9 @@ captures, and renders the PDF/RTF comparison with LibreOffice when it is install
 document is [docs/demo/demo.md](docs/demo/demo.md); the script is in
 [scripts/screenshots](scripts/screenshots). The icon is `media/icon.svg`; after changing it,
 run `node scripts/render-icon.mjs`.
+
+The extension never uses a browser: Chrome/Edge only stand in for the VS Code webview in
+`npm run test:browser`.
 
 ## Releasing
 

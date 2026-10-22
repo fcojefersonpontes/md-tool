@@ -37,9 +37,7 @@ export function getEngineOptions(scope?: vscode.Uri): EngineOptions {
   };
 }
 
-export const DEFAULT_FOOTER_TEMPLATE =
-  '<div style="width:100%;font-family:sans-serif;font-size:9px;color:#666;text-align:center">' +
-  '<span class="pageNumber"></span> / <span class="totalPages"></span></div>';
+export const DEFAULT_FOOTER = '{page} / {pages}';
 
 export interface ExportConfig {
   outputDir: string;
@@ -61,35 +59,30 @@ export function getExportConfig(scope?: vscode.Uri): ExportConfig {
   };
 }
 
-export interface PdfConfig {
-  executablePath: string;
-  options: PdfOptions;
-}
-
-export function getPdfConfig(scope?: vscode.Uri): PdfConfig {
+export function getPdfOptions(scope?: vscode.Uri): PdfOptions {
   const config = vscode.workspace.getConfiguration('mdTool.pdf', scope);
   return {
-    executablePath: config.get<string>('executablePath', ''),
-    options: {
-      ...getExportConfig(scope).page,
-      headerTemplate: config.get<string>('headerTemplate', ''),
-      footerTemplate: config.get<string>('footerTemplate', DEFAULT_FOOTER_TEMPLATE),
-    },
+    ...getExportConfig(scope).page,
+    header: config.get<string>('header', ''),
+    footer: config.get<string>('footer', DEFAULT_FOOTER),
   };
 }
 
-export interface RtfConfig {
+export interface FontConfig {
+  /** Empty: the platform's default family. */
   fontFamily: string;
   codeFontFamily: string;
+  /** Body size in points. */
   fontSize: number;
 }
 
-export function getRtfConfig(scope?: vscode.Uri): RtfConfig {
-  const config = vscode.workspace.getConfiguration('mdTool.rtf', scope);
+/** Fonts for both exporters (PDF and RTF). */
+export function getFontConfig(scope?: vscode.Uri): FontConfig {
+  const config = vscode.workspace.getConfiguration('mdTool.export', scope);
   const fontSize = config.get<number>('fontSize', 11);
   return {
-    fontFamily: config.get<string>('fontFamily', 'Calibri') || 'Calibri',
-    codeFontFamily: config.get<string>('codeFontFamily', 'Consolas') || 'Consolas',
+    fontFamily: config.get<string>('fontFamily', '').trim(),
+    codeFontFamily: config.get<string>('codeFontFamily', '').trim(),
     fontSize: fontSize > 0 && fontSize <= 72 ? fontSize : 11,
   };
 }

@@ -1,78 +1,78 @@
-import { randomBytes } from 'node:crypto';
-import * as fs from 'node:fs/promises';
-import * as os from 'node:os';
-import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { getPdfConfig, getPreviewConfig } from '../config';
-import { buildExportHtml } from '../core/exportHtml';
-import { parseDocumentMeta, resolvePdfOptions } from '../core/exportOptions';
-import { resolveStylesheet } from '../paths';
+import { getEngineOptions, getFontConfig, getPdfOptions } from '../config';
+import { collectAssets, type ExportWarning } from '../core/exportAssets';
 import {
-  documentTitle,
-  ExportCancelledError,
-  type ExportContext,
-  resolveLocalResource,
-  toFileUrl,
-} from './exportContext';
-import { findBrowser, loadBrowserModule } from './browserModule';
+  lengthToPoints,
+  pageSizeTwips,
+  parseDocumentMeta,
+  resolvePdfOptions,
+} from '../core/exportOptions';
+import type { PdfImage } from '../core/pdf/PdfRenderer';
+import { renderDiagrams } from './diagrams';
+import { documentTitle, type ExportContext } from './exportContext';
+import { loadExporter } from './exporterModule';
+import { loadPictures } from './pictures';
 
-/** No Chrome / Edge / Chromium found and `mdTool.pdf.executablePath` is unset or invalid. */
-export class BrowserNotFoundError extends Error {
-  constructor() {
-    super('No Chromium-based browser found');
-  }
-}
+export async function exportPdf(context: ExportContext): Promise<ExportWarning[]> {
+  const { document, engine, signal } = context;
+  const exporter = await loadExporter();
+  const parsed = engine.parse(document.getText());
+  const meta = parseDocumentMeta(parsed.frontMatter);
+  const options = resolvePdfOptions(getPdfOptions(document.uri), meta.pdf);
+  const assets = collectAssets(parsed.tokens, getEngineOptions(document.uri));
 
-export async function exportPdf(context: ExportContext): Promise<void> {
-  const { document, engine, extensionUri, signal } = context;
-  const config = getPdfConfig(document.uri);
-  const executablePath = findBrowser(document.uri);
-  if (!executablePath) throw new BrowserNotFoundError();
-
-  const rendered = engine.render(document.getText(), {
-    resolveResource: (src) => {
-      const local = resolveLocalResource(document.uri, src);
-      return local ? toFileUrl(local.uri) + local.suffix : src;
-    },
-  });
-  const meta = parseDocumentMeta(rendered.frontMatter);
-  const options = resolvePdfOptions(config.options, meta.pdf);
-
-  const asset = (...segments: string[]) =>
-    toFileUrl(vscode.Uri.joinPath(extensionUri, ...segments));
-  const customCss = getPreviewConfig(document.uri)
-    .customCss.map((href) => resolveStylesheet(document.uri, href))
-    .filter((uri): uri is vscode.Uri => uri !== undefined)
-    .map(toFileUrl);
-
-  const html = buildExportHtml({
-    title: documentTitle(document, rendered.headings, meta.title),
-    lang: vscode.env.language,
-    bodyHtml: rendered.html,
-    stylesheets: [
-      asset('dist', 'webview', 'katex', 'katex.min.css'),
-      asset('media', 'preview.css'),
-      asset('media', 'print.css'),
-      ...customCss,
-    ],
-    mermaidScript: asset('dist', 'webview', 'mermaid.min.js'),
-    nonce: randomBytes(16).toString('base64'),
-  });
-
-  const htmlPath = path.join(os.tmpdir(), `md-tool-${randomBytes(8).toString('hex')}.html`);
-  await fs.writeFile(htmlPath, html, 'utf8');
-  try {
-    await loadBrowserModule().renderPdf({
-      executablePath,
-      htmlUrl: toFileUrl(vscode.Uri.file(htmlPath)),
-      outputPath: context.target.fsPath,
-      ...options,
+  const [pictures, diagrams] = await Promise.all([
+    loadPictures(document.uri, assets.images, signal, exporter),
+    renderDiagrams(
+      context.extensionUri,
+      assets.graphics.filter((g) => g.kind === 'mermaid').map((g) => g.source),
       signal,
-    });
-  } catch (error) {
-    if (signal.aborted) throw new ExportCancelledError();
-    throw error;
-  } finally {
-    await fs.rm(htmlPath, { force: true });
+    ),
+  ]);
+  signal.throwIfAborted();
+
+  // Vectors where possible; other bitmaps (GIF, WebP) become PNG.
+  const images = new Map<string, PdfImage>();
+  for (const [src, picture] of pictures) {
+    if (picture.kind === 'bitmap') {
+      const svg = exporter.bitmapSvg(picture.mime, picture.data, picture.width, picture.height);
+      const data = exporter.svgToPng(svg, { width: picture.width });
+      images.set(src, { kind: 'png', data, width: picture.width, height: picture.height });
+    } else {
+      images.set(src, picture);
+    }
   }
+
+  const page = pageSizeTwips(options);
+  const points = (length: string) => lengthToPoints(length) ?? 56.7;
+  const fontConfig = getFontConfig(document.uri);
+  const title = documentTitle(document, parsed.headings, meta.title);
+  const result = await exporter.renderPdf(parsed.tokens, {
+    title,
+    lang: vscode.env.language,
+    page: {
+      width: page.width / 20,
+      height: page.height / 20,
+      margin: {
+        top: points(options.margin.top),
+        right: points(options.margin.right),
+        bottom: points(options.margin.bottom),
+        left: points(options.margin.left),
+      },
+    },
+    fontSize: fontConfig.fontSize,
+    fonts: exporter.resolveFonts(exporter.systemFontIndex(), process.platform, fontConfig),
+    header: options.header,
+    footer: options.footer,
+    date: new Date().toLocaleDateString(vscode.env.language),
+    loadImage: (src) => images.get(src),
+    loadDiagram: (source) => {
+      const svg = diagrams.get(source);
+      return svg ? { kind: 'svg', svg, ...exporter.svgSize(svg) } : undefined;
+    },
+    highlight: (code, lang) => engine.highlightTokens(code, lang),
+  });
+  signal.throwIfAborted();
+  await vscode.workspace.fs.writeFile(context.target, result.data);
+  return result.warnings;
 }

@@ -1,6 +1,9 @@
-import type { Token } from '../MarkdownEngine';
+import type { Token } from './MarkdownEngine';
 
-/** Content with no RTF equivalent that can be embedded as a rendered picture. */
+/** Content exported in a degraded form (as source text, alt text, or left out). */
+export type ExportWarning = 'mermaid' | 'math' | 'html' | 'image';
+
+/** Content that is drawn as a picture rather than written as text. */
 export type GraphicKind = 'math-inline' | 'math-block' | 'mermaid';
 
 export interface Graphic {
@@ -8,7 +11,7 @@ export interface Graphic {
   source: string;
 }
 
-export interface RtfAssets {
+export interface ExportAssets {
   /** Image `src` attributes, as written in the document. */
   images: Set<string>;
   /** Formulas and diagrams, de-duplicated. */
@@ -20,8 +23,11 @@ export function graphicKey(kind: GraphicKind, source: string): string {
   return `${kind}\n${source}`;
 }
 
-/** Lists the images, formulas and diagrams the RTF renderer will ask for. */
-export function collectRtfAssets(tokens: Token[], options: { math: boolean; mermaid: boolean }) {
+/** Lists the images, formulas and diagrams an exporter will ask for. */
+export function collectAssets(
+  tokens: Token[],
+  options: { math: boolean; mermaid: boolean },
+): ExportAssets {
   const images = new Set<string>();
   const graphics = new Map<string, Graphic>();
   const addGraphic = (kind: GraphicKind, source: string) => {
@@ -55,9 +61,22 @@ export function collectRtfAssets(tokens: Token[], options: { math: boolean; merm
     }
   };
   visit(tokens);
-  return { images, graphics: [...graphics.values()] } satisfies RtfAssets;
+  return { images, graphics: [...graphics.values()] };
 }
 
 export function fenceLanguage(token: Token): string {
   return token.info.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+}
+
+/** `n` of a footnote reference or footnote, counting from 1. */
+export function footnoteNumber(token: Token): number {
+  return ((token.meta as { id?: number } | null)?.id ?? 0) + 1;
+}
+
+export function decodeFragment(fragment: string): string {
+  try {
+    return decodeURIComponent(fragment);
+  } catch {
+    return fragment;
+  }
 }

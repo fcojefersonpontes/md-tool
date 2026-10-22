@@ -2,10 +2,11 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { getExportConfig } from '../config';
 import { type ExportFormat, resolveExportPath } from '../core/exportPath';
-import type { RtfWarning } from '../core/rtf/RtfRenderer';
+import type { ExportWarning } from '../core/exportAssets';
 import type { EngineProvider } from '../engineProvider';
+import { VIEWER_TYPES } from '../viewer/DocumentViewer';
 import { ExportCancelledError, type ExportContext } from './exportContext';
-import { BrowserNotFoundError, exportPdf } from './pdfExport';
+import { exportPdf } from './pdfExport';
 import { exportRtf } from './rtfExport';
 
 /** Runs an export with progress, cancellation and result notifications. */
@@ -13,6 +14,8 @@ export class ExportService {
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly engines: EngineProvider,
+    /** Details of failed exports, for bug reports. */
+    private readonly log: vscode.LogOutputChannel,
   ) {}
 
   /** Exports `source` and returns the written file, or `undefined` if cancelled / failed. */
@@ -22,6 +25,7 @@ export class ExportService {
     if (!target) return undefined;
 
     const name = path.basename(target.fsPath);
+    const controller = new AbortController();
     try {
       const warnings = await vscode.window.withProgress(
         {
@@ -30,8 +34,7 @@ export class ExportService {
           cancellable: true,
         },
         async (_progress, token) => {
-          const controller = new AbortController();
-          token.onCancellationRequested(() => controller.abort());
+          token.onCancellationRequested(() => controller.abort(new ExportCancelledError()));
           const context: ExportContext = {
             document,
             target,
@@ -39,20 +42,19 @@ export class ExportService {
             extensionUri: this.extensionUri,
             signal: controller.signal,
           };
-          if (format === 'pdf') {
-            await exportPdf(context);
-            return [];
-          }
-          const result = await exportRtf(context);
-          if (controller.signal.aborted) throw new ExportCancelledError();
+          const result = await (format === 'pdf' ? exportPdf(context) : exportRtf(context));
+          controller.signal.throwIfAborted();
           return result;
         },
       );
       // Not awaited: the notification stays until the user dismisses it.
-      void this.notifyDone(target, warnings);
+      void this.notifyDone(target, format, warnings);
       return target;
     } catch (error) {
-      void this.notifyError(error);
+      if (!controller.signal.aborted) {
+        this.log.error(`Exporting ${document.uri.toString()} to ${format}:`, error);
+        void this.notifyError(error);
+      }
       return undefined;
     }
   }
@@ -85,7 +87,12 @@ export class ExportService {
     return target;
   }
 
-  private async notifyDone(target: vscode.Uri, warnings: RtfWarning[]): Promise<void> {
+  private async notifyDone(
+    target: vscode.Uri,
+    format: ExportFormat,
+    warnings: ExportWarning[],
+  ): Promise<void> {
+    const preview = vscode.l10n.t('Preview');
     const open = vscode.l10n.t('Open');
     const reveal = vscode.l10n.t('Show in Folder');
     const name = path.basename(target.fsPath);
@@ -93,45 +100,36 @@ export class ExportService {
       ? vscode.l10n.t('Exported {0}. {1}', name, warnings.map(describeWarning).join(' '))
       : vscode.l10n.t('Exported {0}.', name);
     const choice = await (warnings.length
-      ? vscode.window.showWarningMessage(message, open, reveal)
-      : vscode.window.showInformationMessage(message, open, reveal));
-    if (choice === open) await vscode.env.openExternal(target);
+      ? vscode.window.showWarningMessage(message, preview, open, reveal)
+      : vscode.window.showInformationMessage(message, preview, open, reveal));
+    if (choice === preview) {
+      await vscode.commands.executeCommand('vscode.openWith', target, VIEWER_TYPES[format], {
+        viewColumn: vscode.ViewColumn.Beside,
+      });
+    } else if (choice === open) await vscode.env.openExternal(target);
     else if (choice === reveal) await vscode.commands.executeCommand('revealFileInOS', target);
   }
 
   private async notifyError(error: unknown): Promise<void> {
     if (error instanceof ExportCancelledError) return;
-    if (error instanceof BrowserNotFoundError) {
-      const configure = vscode.l10n.t('Configure Browser Path');
-      const choice = await vscode.window.showErrorMessage(
-        vscode.l10n.t(
-          'PDF export needs Google Chrome, Microsoft Edge or Chromium. Install one or set "mdTool.pdf.executablePath".',
-        ),
-        configure,
-      );
-      if (choice === configure) {
-        await vscode.commands.executeCommand(
-          'workbench.action.openSettings',
-          'mdTool.pdf.executablePath',
-        );
-      }
-      return;
-    }
     const message = error instanceof Error ? error.message : String(error);
-    await vscode.window.showErrorMessage(vscode.l10n.t('Export failed: {0}', message));
+    const details = vscode.l10n.t('Show Details');
+    const choice = await vscode.window.showErrorMessage(
+      vscode.l10n.t('Export failed: {0}', message),
+      details,
+    );
+    if (choice === details) this.log.show();
   }
 }
 
-function describeWarning(warning: RtfWarning): string {
+function describeWarning(warning: ExportWarning): string {
   switch (warning) {
     case 'mermaid':
       return vscode.l10n.t(
-        'Some Mermaid diagrams were exported as code (no browser found, or the diagram is invalid).',
+        'Some Mermaid diagrams were exported as code (invalid or could not be drawn).',
       );
     case 'math':
-      return vscode.l10n.t(
-        'Some formulas were exported as TeX source (no browser found, or the formula is invalid).',
-      );
+      return vscode.l10n.t('Some formulas were exported as TeX source (invalid formula).');
     case 'html':
       return vscode.l10n.t('Raw HTML was omitted.');
     case 'image':

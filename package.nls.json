@@ -20,12 +20,11 @@
   "config.export.pageSize": "Page size for PDF and RTF exports.",
   "config.export.landscape": "Use landscape orientation for PDF and RTF exports.",
   "config.export.margin": "Page margins as a CSS length or shorthand, e.g. `20mm` or `15mm 20mm`.",
-  "config.pdf.executablePath": "Path to Chrome, Edge or Chromium used to print PDFs. Leave empty to detect automatically.",
-  "config.pdf.headerTemplate": "HTML for the PDF page header. Use `<span class=\"title\">`, `<span class=\"date\">`, `<span class=\"pageNumber\">` and `<span class=\"totalPages\">`. Empty for no header.",
-  "config.pdf.footerTemplate": "HTML for the PDF page footer (same placeholders as the header). Empty for no footer.",
-  "config.rtf.fontFamily": "Body font for RTF exports.",
-  "config.rtf.codeFontFamily": "Monospace font for code in RTF exports.",
-  "config.rtf.fontSize": "Body font size in points for RTF exports.",
+  "config.export.fontFamily": "Body font for PDF and RTF exports. Empty: the system default (Segoe UI on Windows, Helvetica Neue on macOS, DejaVu Sans on Linux).",
+  "config.export.codeFontFamily": "Monospace font for code in PDF and RTF exports. Empty: the system default (Consolas, Menlo, DejaVu Sans Mono).",
+  "config.export.fontSize": "Body font size in points for PDF and RTF exports.",
+  "config.pdf.header": "Text centered at the top of every PDF page. Placeholders: `{page}`, `{pages}`, `{title}`, `{date}`. Empty for no header.",
+  "config.pdf.footer": "Text centered at the bottom of every PDF page (same placeholders as the header). Empty for no footer.",
   "command.toggleBold": "Toggle Bold",
   "command.toggleItalic": "Toggle Italic",
   "command.toggleStrikethrough": "Toggle Strikethrough",
@@ -40,5 +39,8 @@
   "config.editor.formatTables": "Provide a Markdown formatter (Format Document / Format Selection) that aligns tables.",
   "config.toc.minLevel": "Smallest heading level included in the table of contents.",
   "config.toc.maxLevel": "Largest heading level included in the table of contents.",
-  "config.toc.updateOnSave": "Update the table of contents between `<!-- toc -->` and `<!-- tocstop -->` when saving."
+  "config.toc.updateOnSave": "Update the table of contents between `<!-- toc -->` and `<!-- tocstop -->` when saving.",
+  "command.openViewer": "Open in PDF / RTF Viewer",
+  "viewer.pdf": "MD tool PDF Viewer",
+  "viewer.rtf": "MD tool RTF Viewer"
 }

@@ -46,6 +46,21 @@ export function getHighlighter(): Promise<HighlighterCore> {
 }
 
 /**
+ * Highlighted lines of `code` with GitHub Light colors, for exporters that draw
+ * text themselves; `undefined` for languages that are not loaded.
+ */
+export function highlightTokens(
+  hl: HighlighterCore,
+  code: string,
+  lang: string,
+): { content: string; color?: string }[][] | undefined {
+  if (!hl.getLoadedLanguages().includes(lang)) return undefined;
+  return hl
+    .codeToTokens(code, { lang, theme: 'github-light' })
+    .tokens.map((line) => line.map(({ content, color }) => ({ content, color })));
+}
+
+/**
  * Highlights `code` as a `<pre class="shiki">` block using CSS variables for both
  * themes (`--shiki-light` / `--shiki-dark`), so the stylesheet picks the active one.
  * Returns `undefined` for languages that are not loaded.

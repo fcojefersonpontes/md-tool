@@ -12,8 +12,10 @@ Visualize, edite e exporte Markdown para **PDF** e **RTF** sem sair do VS Code.
 - Markdown no estilo GitHub: tabelas, listas de tarefas clicáveis, notas de rodapé, front matter.
 - Realce de código, fórmulas **KaTeX** e diagramas **Mermaid**.
 - Segue o tema do VS Code, ou fica sempre claro ou escuro; aceita CSS próprio por cima.
-- **Exportar para PDF** com o Chrome, Edge ou Chromium que você já tem, igual ao preview.
-- **Exportar para RTF**, para Word e LibreOffice, com fórmulas e diagramas embutidos como imagem.
+- **Exportar para PDF** e **RTF** (para Word e LibreOffice) sem instalar mais nada: sem
+  navegador, sem Pandoc, sem LaTeX.
+- PDFs com texto de verdade, links, marcadores e fórmulas e diagramas vetoriais.
+- Um **visualizador de PDF e RTF** simples, para conferir o resultado sem sair do VS Code.
 - **Atalhos de edição**: negrito, itálico, tachado e código (com vários cursores), links,
   formatação de tabelas, sumário e continuação de listas no Enter.
 
@@ -23,7 +25,8 @@ Visualize, edite e exporte Markdown para **PDF** e **RTF** sem sair do VS Code.
 
 Use **Exportar para PDF** ou **Exportar para RTF** no menu de contexto do editor, no Explorer,
 na barra do preview ou na Paleta de Comandos. O arquivo é gravado ao lado do Markdown (veja
-`mdTool.export.outputDir`), e uma notificação oferece abrir o arquivo ou mostrá-lo na pasta.
+`mdTool.export.outputDir`), e uma notificação oferece visualizar o arquivo, abri-lo no
+programa padrão ou mostrá-lo na pasta.
 
 ![Notificação de exportação](docs/images/export.png)
 
@@ -31,12 +34,28 @@ O mesmo documento, exportado:
 
 ![O PDF exportado e o RTF aberto no LibreOffice Writer](docs/images/outputs.png)
 
-O **PDF** precisa do Google Chrome, do Microsoft Edge ou do Chromium instalado. Nada é baixado:
-a extensão encontra o navegador sozinha ou usa `mdTool.pdf.executablePath`.
+Os dois formatos são gerados pela própria extensão, com as fontes do sistema (embutidas no PDF):
 
-O **RTF** é gerado pela própria extensão. Fórmulas, diagramas Mermaid e imagens SVG/GIF/WebP são
-desenhados pelo mesmo navegador e embutidos como PNG. Sem navegador, saem como texto (TeX,
-código do diagrama, texto alternativo), com um aviso.
+- **PDF**: texto selecionável, links clicáveis (também para títulos e notas de rodapé), um
+  marcador por título, número de página, e fórmulas, diagramas e imagens SVG como vetores.
+- **RTF**: títulos com nível de estrutura, listas, tabelas, código e notas de rodapé; fórmulas,
+  diagramas e imagens SVG/GIF/WebP entram como imagens PNG.
+
+As fórmulas são diagramadas com o MathJax. Os diagramas Mermaid são desenhados pelo próprio
+VS Code, num painel que abre ao lado do editor por um instante durante a exportação. Uma fórmula
+ou um diagrama inválido sai como texto-fonte, com um aviso.
+
+### Conferindo o resultado
+
+**Visualizar**, na notificação da exportação, abre o arquivo num visualizador simples ao lado
+do editor. Ele recarrega quando você exporta de novo, então pode ficar aberto enquanto você
+trabalha no documento. Para abrir qualquer arquivo `.pdf` ou `.rtf` nele, use **Abrir no
+Visualizador de PDF / RTF** no menu de contexto do Explorer ou **Reabrir Editor Com…**.
+
+- **PDF**: páginas desenhadas pelo pdf.js, com texto selecionável, links funcionando e zoom.
+- **RTF**: lido pela própria extensão: formatação do texto, títulos, listas, tabelas, links,
+  notas de rodapé e imagens PNG/JPEG. Mostra o conteúdo, mas o Word e o LibreOffice podem
+  diagramar um pouco diferente. Outros formatos de imagem (EMF, WMF) aparecem como `[image]`.
 
 ### Opções por documento
 
@@ -49,7 +68,8 @@ pdf:
   format: Letter
   landscape: true
   margin: 15mm 20mm
-  headerTemplate: '<div style="font-size:9px;width:100%;text-align:center"><span class="title"></span></div>'
+  header: '{title}'
+  footer: 'Página {page} de {pages}'
 ---
 ```
 
@@ -79,47 +99,49 @@ pasta `assets/` ao lado do documento:
 
 ## Configurações
 
-| Chave                              | Padrão           | Descrição                                    |
-| ---------------------------------- | ---------------- | -------------------------------------------- |
-| `mdTool.preview.theme`             | `auto`           | `auto` (segue o VS Code), `light` ou `dark`  |
-| `mdTool.preview.customCss`         | `[]`             | Folhas de estilo extras no preview e no PDF  |
-| `mdTool.preview.scrollSync`        | `true`           | Sincronizar rolagem                          |
-| `mdTool.markdown.allowHtml`        | `false`          | Renderizar HTML bruto (sanitizado)           |
-| `mdTool.markdown.math`             | `true`           | Fórmulas KaTeX                               |
-| `mdTool.markdown.mermaid`          | `true`           | Diagramas Mermaid                            |
-| `mdTool.export.outputDir`          | `${fileDirname}` | Pasta de saída (aceita `${workspaceFolder}`) |
-| `mdTool.export.askLocation`        | `false`          | Perguntar onde salvar                        |
-| `mdTool.export.pageSize`           | `A4`             | `A4`, `Letter` ou `Legal`                    |
-| `mdTool.export.landscape`          | `false`          | Orientação paisagem                          |
-| `mdTool.export.margin`             | `20mm`           | Margens (abreviação CSS)                     |
-| `mdTool.pdf.executablePath`        | (auto)           | Navegador usado para o PDF                   |
-| `mdTool.pdf.headerTemplate`        | vazio            | HTML do cabeçalho                            |
-| `mdTool.pdf.footerTemplate`        | nº da página     | HTML do rodapé                               |
-| `mdTool.rtf.fontFamily`            | `Calibri`        | Fonte do RTF                                 |
-| `mdTool.rtf.codeFontFamily`        | `Consolas`       | Fonte do código no RTF                       |
-| `mdTool.rtf.fontSize`              | `11`             | Tamanho da fonte (pt)                        |
-| `mdTool.editor.listContinuation`   | `true`           | Continuar listas no Enter                    |
-| `mdTool.editor.formatTables`       | `true`           | Registrar o formatador de tabelas            |
-| `mdTool.toc.minLevel` / `maxLevel` | `2` / `3`        | Níveis de título incluídos no sumário        |
-| `mdTool.toc.updateOnSave`          | `true`           | Atualizar o sumário ao salvar                |
+| Chave                              | Padrão             | Descrição                                           |
+| ---------------------------------- | ------------------ | --------------------------------------------------- |
+| `mdTool.preview.theme`             | `auto`             | `auto` (segue o VS Code), `light` ou `dark`         |
+| `mdTool.preview.customCss`         | `[]`               | Folhas de estilo extras no preview                  |
+| `mdTool.preview.scrollSync`        | `true`             | Sincronizar rolagem                                 |
+| `mdTool.markdown.allowHtml`        | `false`            | Renderizar HTML bruto (sanitizado)                  |
+| `mdTool.markdown.math`             | `true`             | Fórmulas KaTeX                                      |
+| `mdTool.markdown.mermaid`          | `true`             | Diagramas Mermaid                                   |
+| `mdTool.export.outputDir`          | `${fileDirname}`   | Pasta de saída (aceita `${workspaceFolder}`)        |
+| `mdTool.export.askLocation`        | `false`            | Perguntar onde salvar                               |
+| `mdTool.export.pageSize`           | `A4`               | `A4`, `Letter` ou `Legal`                           |
+| `mdTool.export.landscape`          | `false`            | Orientação paisagem                                 |
+| `mdTool.export.margin`             | `20mm`             | Margens (abreviação CSS)                            |
+| `mdTool.export.fontFamily`         | (sistema)          | Fonte do texto no PDF e no RTF                      |
+| `mdTool.export.codeFontFamily`     | (sistema)          | Fonte do código no PDF e no RTF                     |
+| `mdTool.export.fontSize`           | `11`               | Tamanho da fonte (pt)                               |
+| `mdTool.pdf.header`                | vazio              | Cabeçalho: `{page}`, `{pages}`, `{title}`, `{date}` |
+| `mdTool.pdf.footer`                | `{page} / {pages}` | Rodapé (mesmos marcadores)                          |
+| `mdTool.editor.listContinuation`   | `true`             | Continuar listas no Enter                           |
+| `mdTool.editor.formatTables`       | `true`             | Registrar o formatador de tabelas                   |
+| `mdTool.toc.minLevel` / `maxLevel` | `2` / `3`          | Níveis de título incluídos no sumário               |
+| `mdTool.toc.updateOnSave`          | `true`             | Atualizar o sumário ao salvar                       |
 
 ## Segurança e privacidade
 
 - O preview roda com uma Content Security Policy restrita, e todo HTML é sanitizado.
 - Em [workspaces não confiáveis](https://code.visualstudio.com/docs/editor/workspace-trust),
-  HTML bruto, folhas de estilo próprias e caminho de navegador personalizado ficam desativados.
-- O MD tool **não coleta telemetria** e não faz requisições de rede por conta própria. Imagens
-  remotas de um documento são carregadas pelo preview, como em qualquer visualizador de Markdown.
+  HTML bruto e folhas de estilo próprias ficam desativados.
+- O MD tool **não coleta telemetria**. As únicas requisições de rede são as das imagens remotas
+  que um documento usa, no preview e na exportação.
+- A exportação não executa nenhum programa externo.
 
 ## Limitações conhecidas
 
 - No RTF, fórmulas inline são rebaixadas até a linha de base com o comando `\dn`, que o
   LibreOffice ignora: nele, fórmulas com subscritos ou frações ficam um pouco acima da linha.
-- A exportação para PDF e as imagens do RTF precisam de um navegador baseado em Chromium.
+- O PDF segue um layout próprio no estilo do GitHub: as folhas de estilo do preview não valem para ele.
+- Emojis saem em uma cor só (fontes de PDF não carregam glifos coloridos).
+- HTML bruto fica de fora do PDF e do RTF, com um aviso.
 
 ## Requisitos
 
-VS Code 1.90 ou mais recente. Para PDF: Google Chrome, Microsoft Edge ou Chromium.
+VS Code 1.90 ou mais recente. Nada mais.
 
 ## Licença
 
