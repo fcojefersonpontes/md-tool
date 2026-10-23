@@ -165,7 +165,7 @@ folder next to the document:
 | `mdTool.export.margin`             | `20mm`             | Page margins (CSS shorthand)                          |
 | `mdTool.export.fontFamily`         | (system)           | Body font of PDF and RTF                              |
 | `mdTool.export.codeFontFamily`     | (system)           | Code font of PDF and RTF                              |
-| `mdTool.export.fontSize`           | `10.5`             | Body font size (pt)                                   |
+| `mdTool.export.fontSize`           | (like the preview) | Body font size (pt); empty: wraps like the preview    |
 | `mdTool.pdf.header`                | empty              | Header text: `{page}`, `{pages}`, `{title}`, `{date}` |
 | `mdTool.pdf.footer`                | `{page} / {pages}` | Footer text (same placeholders)                       |
 | `mdTool.editor.listContinuation`   | `true`             | Continue lists on Enter                               |

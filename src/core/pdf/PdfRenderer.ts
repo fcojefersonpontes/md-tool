@@ -13,6 +13,7 @@ import type { ResolvedFonts } from '../fonts/fontIndex';
 import { type MathGraphic, renderMath } from '../graphics/math';
 import type { Token } from '../MarkdownEngine';
 import { PdfFonts } from './fonts';
+import { columnWidths } from '../tableLayout';
 import { pdfSafeSvg } from './svg';
 import {
   type InlineBox,
@@ -1363,22 +1364,4 @@ function offset(align: Align, width: number, lineWidth: number): number {
   if (align === 'center') return Math.max(0, (width - lineWidth) / 2);
   if (align === 'right') return Math.max(0, width - lineWidth);
   return 0;
-}
-
-/**
- * Column widths for a table: natural widths when they fit, else each column gets
- * its minimum plus a share of the rest proportional to how much it wants.
- */
-export function columnWidths(
-  sizes: { natural: number; minimum: number }[],
-  available: number,
-): number[] {
-  const natural = sizes.reduce((sum, size) => sum + size.natural, 0);
-  if (natural <= available) return sizes.map((size) => size.natural);
-  const minimum = sizes.reduce((sum, size) => sum + size.minimum, 0);
-  if (minimum >= available) return sizes.map((size) => (size.minimum * available) / minimum);
-  const want = natural - minimum;
-  return sizes.map(
-    (size) => size.minimum + ((size.natural - size.minimum) * (available - minimum)) / want,
-  );
 }

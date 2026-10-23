@@ -79,19 +79,18 @@ export interface FontConfig {
   /** Empty: the platform's default family. */
   fontFamily: string;
   codeFontFamily: string;
-  /** Body size in points. */
-  fontSize: number;
+  /** Body size in points; `undefined` sizes the text like the preview (`previewFontSize`). */
+  fontSize: number | undefined;
 }
 
 /** Fonts for both exporters (PDF and RTF). */
 export function getFontConfig(scope?: vscode.Uri): FontConfig {
   const config = vscode.workspace.getConfiguration('mdTool.export', scope);
-  // 10.5 pt: the preview's 14 px.
-  const fontSize = config.get<number>('fontSize', 10.5);
+  const fontSize = config.get<number | null>('fontSize', null);
   return {
     fontFamily: config.get<string>('fontFamily', '').trim(),
     codeFontFamily: config.get<string>('codeFontFamily', '').trim(),
-    fontSize: fontSize > 0 && fontSize <= 72 ? fontSize : 10.5,
+    fontSize: typeof fontSize === 'number' && fontSize > 0 && fontSize <= 72 ? fontSize : undefined,
   };
 }
 

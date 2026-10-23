@@ -25,7 +25,7 @@
   "config.export.margin": "Margens da página como comprimento CSS ou abreviação, ex.: `20mm` ou `15mm 20mm`.",
   "config.export.fontFamily": "Fonte do texto nas exportações PDF e RTF. Vazio: a padrão do sistema (Segoe UI no Windows, Helvetica Neue no macOS, DejaVu Sans no Linux).",
   "config.export.codeFontFamily": "Fonte monoespaçada do código nas exportações PDF e RTF. Vazio: a padrão do sistema (Consolas, Menlo, DejaVu Sans Mono).",
-  "config.export.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações PDF e RTF.",
+  "config.export.fontSize": "Tamanho da fonte do texto, em pontos, nas exportações PDF e RTF. Vazio (o padrão): o tamanho em que cada linha comporta o mesmo texto que o preview, que então quebra nos mesmos lugares (cerca de 8 pt em A4 com margens de 20 mm).",
   "config.pdf.header": "Texto centralizado no topo de cada página do PDF. Marcadores: `{page}`, `{pages}`, `{title}`, `{date}`. Vazio para sem cabeçalho.",
   "config.pdf.footer": "Texto centralizado no pé de cada página do PDF (mesmos marcadores do cabeçalho). Vazio para sem rodapé.",
   "command.toggleBold": "Alternar Negrito",

@@ -8,7 +8,12 @@ import {
   type GraphicKind,
 } from '../core/exportAssets';
 import { analyzeAbnt } from '../core/abnt/structure';
-import { lengthToTwips, pageSizeTwips, parseDocumentMeta } from '../core/exportOptions';
+import {
+  lengthToTwips,
+  pageSizeTwips,
+  parseDocumentMeta,
+  previewFontSize,
+} from '../core/exportOptions';
 import { familyNames } from '../core/fonts/fontIndex';
 import type { Picture } from '../core/graphics/pictures';
 import { readImage, type RtfImage } from '../core/rtf/images';
@@ -60,8 +65,15 @@ export async function exportRtf(context: ExportContext): Promise<ExportWarning[]
     if (image) images.set(src, image);
   }
 
+  const page = abnt ? abntPage() : getExportConfig(document.uri).page;
+  const twips = (length: string) => lengthToTwips(length) ?? 1134;
+  const paper = pageSizeTwips(page);
+  const fontSize =
+    fontConfig.fontSize ??
+    previewFontSize((paper.width - twips(page.margin.left) - twips(page.margin.right)) / 20);
+
   // Formulas and diagrams become PNG pictures.
-  const fontPx = fontConfig.fontSize * PX_PER_PT;
+  const fontPx = fontSize * PX_PER_PT;
   const graphics = new Map<string, RtfImage>();
   for (const { kind, source } of assets.graphics) {
     const image =
@@ -71,16 +83,14 @@ export async function exportRtf(context: ExportContext): Promise<ExportWarning[]
     if (image) graphics.set(graphicKey(kind, source), image);
   }
 
-  const page = abnt ? abntPage() : getExportConfig(document.uri).page;
-  const twips = (length: string) => lengthToTwips(length) ?? 1134;
   const result = renderRtf(parsed.tokens, {
     title,
     // Word resolves a missing family itself: name the first one configured.
     fontFamily: familyNames(fontConfig.fontFamily)[0] || fonts.body?.name || 'Calibri',
     codeFontFamily: familyNames(fontConfig.codeFontFamily)[0] || fonts.mono?.name || 'Consolas',
-    fontSize: fontConfig.fontSize,
+    fontSize,
     page: {
-      ...pageSizeTwips(page),
+      ...paper,
       margin: {
         top: twips(page.margin.top),
         right: twips(page.margin.right),

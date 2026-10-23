@@ -6,6 +6,7 @@ import { collectAssets, type ExportWarning } from '../core/exportAssets';
 import {
   lengthToPoints,
   pageSizeTwips,
+  previewFontSize,
   parseDocumentMeta,
   resolvePdfOptions,
 } from '../core/exportOptions';
@@ -71,7 +72,9 @@ export async function exportPdf(context: ExportContext): Promise<ExportWarning[]
         left: points(options.margin.left),
       },
     },
-    fontSize: fontConfig.fontSize,
+    fontSize:
+      fontConfig.fontSize ??
+      previewFontSize(page.width / 20 - points(options.margin.left) - points(options.margin.right)),
     fonts: exporter.resolveFonts(exporter.systemFontIndex(), process.platform, fontConfig),
     header: options.header,
     footer: options.footer,

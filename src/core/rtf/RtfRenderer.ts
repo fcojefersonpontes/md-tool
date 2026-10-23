@@ -1,6 +1,7 @@
 import { ABNT, type AbntOptions, linePitch } from '../abnt/profile';
 import { type AbntPlan, alineaLetter, type Caption, tableKind } from '../abnt/structure';
 import type { Token } from '../MarkdownEngine';
+import { columnWidths, estimateColumnSizes } from '../tableLayout';
 import {
   decodeFragment,
   type ExportWarning,
@@ -380,25 +381,24 @@ class RtfWriter {
     const columns = Math.max(0, ...rows.map((row) => row.cells.length));
     if (columns === 0) return end;
 
-    // Size columns to their longest cell (like the HTML table), shrinking to fit the page.
-    // ~0.6em per character, 0.7em in bold headers, plus the cell padding (1.2em).
+    // Size columns like the PDF (and a browser), from estimated text widths; the cell
+    // padding is \trgaph108 on each side.
     const em = (this.abnt ? ABNT.font.small : this.options.fontSize) * 20;
-    const widths = Array.from({ length: columns }, (_, c) => {
-      const ems = Math.max(
-        ...rows.map(
-          (row) => (row.cells[c]?.inline?.content.length ?? 0) * (row.header ? 0.7 : 0.6),
-        ),
-      );
-      return (Math.min(36, Math.max(1.8, ems)) + 1.2) * em;
-    });
     const left = this.abnt ? 0 : (this.lists.length + this.quoteDepth) * INDENT;
-    const available = this.contentWidth - left;
-    const total = widths.reduce((sum, width) => sum + width, 0);
-    const scale = Math.min(1, available / total);
+    const sizes = estimateColumnSizes(
+      rows.map((row) => ({
+        header: row.header,
+        cells: row.cells.map((cell) => plainText(cell.inline?.children ?? [])),
+      })),
+      columns,
+      em,
+      216,
+    );
+    const widths = columnWidths(sizes, this.contentWidth - left);
     const edges: number[] = [];
     let position = left;
     for (const width of widths) {
-      position += Math.round(width * scale);
+      position += Math.round(width);
       edges.push(position);
     }
 
@@ -819,4 +819,11 @@ function numberWidth(number: string): number {
   const periods = number.length - digits;
   const em = ABNT.font.body * 20;
   return Math.round((digits * 0.5 + periods * 0.25 + 0.25) * em * 1.15);
+}
+
+/** The visible text of inline tokens, for estimating widths. */
+function plainText(children: Token[]): string {
+  return children
+    .map((token) => (token.children ? plainText(token.children) : token.content))
+    .join('');
 }

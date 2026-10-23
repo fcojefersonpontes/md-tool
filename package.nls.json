@@ -26,7 +26,7 @@
   "config.export.margin": "Page margins as a CSS length or shorthand, e.g. `20mm` or `15mm 20mm`.",
   "config.export.fontFamily": "Body font for PDF and RTF exports. Empty: the system default (Segoe UI on Windows, Helvetica Neue on macOS, DejaVu Sans on Linux).",
   "config.export.codeFontFamily": "Monospace font for code in PDF and RTF exports. Empty: the system default (Consolas, Menlo, DejaVu Sans Mono).",
-  "config.export.fontSize": "Body font size in points for PDF and RTF exports.",
+  "config.export.fontSize": "Body font size in points for PDF and RTF exports. Empty (the default): sized so each line holds as much text as the preview, which then wraps in the same places (about 8 pt on A4 with 20 mm margins).",
   "config.pdf.header": "Text centered at the top of every PDF page. Placeholders: `{page}`, `{pages}`, `{title}`, `{date}`. Empty for no header.",
   "config.pdf.footer": "Text centered at the bottom of every PDF page (same placeholders as the header). Empty for no footer.",
   "command.toggleBold": "Toggle Bold",

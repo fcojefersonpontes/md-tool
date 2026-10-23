@@ -152,6 +152,21 @@ export function resolvePdfOptions(defaults: PdfOptions, overrides: PdfOverrides)
   };
 }
 
+/**
+ * The preview's text column: 900 px wide less 2 × 32 px of padding, with 14 px text
+ * (media/preview.css). A line holds about 60 em.
+ */
+const PREVIEW = { column: 836, font: 14 };
+
+/**
+ * Body size, in points, at which a column `width` points wide holds as much text per line
+ * as the preview at full width, so text wraps in the same places. Rounded to half points
+ * (RTF sizes are in half points).
+ */
+export function previewFontSize(width: number): number {
+  return Math.round(((width * PREVIEW.font) / PREVIEW.column) * 2) / 2;
+}
+
 /** Converts a CSS length to points; `undefined` if invalid. */
 export function lengthToPoints(length: string): number | undefined {
   const twips = lengthToTwips(length);

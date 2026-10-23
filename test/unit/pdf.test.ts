@@ -8,7 +8,9 @@ import { identifyPicture } from '../../src/core/graphics/pictures';
 import { bitmapSvg, initRaster, svgSize, svgToPng } from '../../src/core/graphics/raster';
 import { MarkdownEngine } from '../../src/core/MarkdownEngine';
 import { layoutLines, type Measurer, type TextStyle } from '../../src/core/pdf/layout';
-import { columnWidths, type PdfRenderOptions, renderPdf } from '../../src/core/pdf/PdfRenderer';
+import { previewFontSize } from '../../src/core/exportOptions';
+import { type PdfRenderOptions, renderPdf } from '../../src/core/pdf/PdfRenderer';
+import { columnWidths, estimateColumnSizes } from '../../src/core/tableLayout';
 import { fixDashArray, pdfSafeSvg } from '../../src/core/pdf/svg';
 import { readImage } from '../../src/core/rtf/images';
 
@@ -90,7 +92,7 @@ describe('columnWidths', () => {
     expect(widths[0]).toBeCloseTo(10 + 40 / 4);
   });
 
-  it('scales minimums down when even they do not fit', () => {
+  it('splits the space evenly when no minimum fits', () => {
     expect(
       columnWidths(
         [
@@ -100,6 +102,45 @@ describe('columnWidths', () => {
         40,
       ),
     ).toEqual([20, 20]);
+  });
+
+  it('keeps narrow columns whole when a long word does not fit', () => {
+    // "Margens" (12) and "Valor" (10) stay whole; the long code (200) breaks.
+    expect(
+      columnWidths(
+        [
+          { natural: 20, minimum: 12 },
+          { natural: 15, minimum: 10 },
+          { natural: 200, minimum: 200 },
+        ],
+        100,
+      ),
+    ).toEqual([12, 10, 78]);
+  });
+});
+
+describe('estimateColumnSizes', () => {
+  it('estimates from characters, with bold headers wider', () => {
+    const [first, second] = estimateColumnSizes(
+      [
+        { header: true, cells: ['Número', 'Regra'] },
+        { header: false, cells: ['1', 'um texto mais longo'] },
+      ],
+      2,
+      10,
+      2,
+    );
+    expect(first.natural).toBeCloseTo(6 * 6.8 + 2);
+    expect(first.minimum).toBeCloseTo(6 * 6.8 + 2);
+    expect(second.natural).toBeCloseTo(19 * 5.8 + 2);
+    expect(second.minimum).toBeCloseTo(5 * 6.8 + 2); // "Regra", in bold, beats "longo"
+  });
+});
+
+describe('previewFontSize', () => {
+  it('fits as much text per line as the preview at full width', () => {
+    expect(previewFontSize(836 * 0.75)).toBe(10.5); // the preview's own column
+    expect(previewFontSize(595.28 - (2 * (20 * 72)) / 25.4)).toBe(8); // A4, 20 mm margins
   });
 });
 
