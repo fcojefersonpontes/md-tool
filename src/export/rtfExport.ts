@@ -7,12 +7,20 @@ import {
   graphicKey,
   type GraphicKind,
 } from '../core/exportAssets';
+import { analyzeAbnt } from '../core/abnt/structure';
 import { lengthToTwips, pageSizeTwips, parseDocumentMeta } from '../core/exportOptions';
+import { familyNames } from '../core/fonts/fontIndex';
 import type { Picture } from '../core/graphics/pictures';
 import { readImage, type RtfImage } from '../core/rtf/images';
 import { renderRtf } from '../core/rtf/RtfRenderer';
 import { renderDiagrams } from './diagrams';
-import { documentTitle, type ExportContext } from './exportContext';
+import {
+  abntFonts,
+  abntOptions,
+  abntPage,
+  documentTitle,
+  type ExportContext,
+} from './exportContext';
 import { loadExporter } from './exporterModule';
 import { loadPictures } from './pictures';
 
@@ -27,8 +35,11 @@ export async function exportRtf(context: ExportContext): Promise<ExportWarning[]
   const exporter = await loadExporter();
   const parsed = engine.parse(document.getText());
   const meta = parseDocumentMeta(parsed.frontMatter);
+  const abnt = abntOptions(document, meta);
+  const title = documentTitle(document, parsed.headings, meta.title);
+  const plan = abnt && analyzeAbnt(parsed.tokens, abnt, meta);
   const assets = collectAssets(parsed.tokens, getEngineOptions(document.uri));
-  const fontConfig = getFontConfig(document.uri);
+  const fontConfig = abnt ? abntFonts(getFontConfig(document.uri)) : getFontConfig(document.uri);
   const fonts = exporter.resolveFonts(exporter.systemFontIndex(), process.platform, fontConfig);
 
   const [pictures, diagrams] = await Promise.all([
@@ -60,12 +71,13 @@ export async function exportRtf(context: ExportContext): Promise<ExportWarning[]
     if (image) graphics.set(graphicKey(kind, source), image);
   }
 
-  const { page } = getExportConfig(document.uri);
+  const page = abnt ? abntPage() : getExportConfig(document.uri).page;
   const twips = (length: string) => lengthToTwips(length) ?? 1134;
   const result = renderRtf(parsed.tokens, {
-    title: documentTitle(document, parsed.headings, meta.title),
-    fontFamily: fontConfig.fontFamily || fonts.body?.name || 'Calibri',
-    codeFontFamily: fontConfig.codeFontFamily || fonts.mono?.name || 'Consolas',
+    title,
+    // Word resolves a missing family itself: name the first one configured.
+    fontFamily: familyNames(fontConfig.fontFamily)[0] || fonts.body?.name || 'Calibri',
+    codeFontFamily: familyNames(fontConfig.codeFontFamily)[0] || fonts.mono?.name || 'Consolas',
     fontSize: fontConfig.fontSize,
     page: {
       ...pageSizeTwips(page),
@@ -78,11 +90,12 @@ export async function exportRtf(context: ExportContext): Promise<ExportWarning[]
     },
     loadImage: (src) => images.get(src),
     loadGraphic: (kind: GraphicKind, source: string) => graphics.get(graphicKey(kind, source)),
+    abnt: plan ? { plan, options: abnt } : undefined,
   });
 
   // The renderer escapes everything outside ASCII, so the output is plain ASCII.
   await vscode.workspace.fs.writeFile(context.target, Buffer.from(result.rtf, 'ascii'));
-  return result.warnings;
+  return [...result.warnings, ...(plan ? plan.warnings : [])];
 }
 
 function toRtfImage(

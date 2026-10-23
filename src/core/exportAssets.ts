@@ -1,7 +1,10 @@
 import type { Token } from './MarkdownEngine';
 
-/** Content exported in a degraded form (as source text, alt text, or left out). */
-export type ExportWarning = 'mermaid' | 'math' | 'html' | 'image';
+/**
+ * Content exported in a degraded form (as source text, alt text, or left out), or,
+ * in the ABNT profile, something the rules ask for that the document lacks.
+ */
+export type ExportWarning = 'mermaid' | 'math' | 'html' | 'image' | 'source' | 'heading-level';
 
 /** Content that is drawn as a picture rather than written as text. */
 export type GraphicKind = 'math-inline' | 'math-block' | 'mermaid';

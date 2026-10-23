@@ -8,7 +8,8 @@ Preview, edit and export Markdown to **PDF** and **RTF**, without leaving VS Cod
 
 ## Features
 
-- **Live preview** next to the editor (`Ctrl+K Alt+V`), with synchronized scrolling.
+- **Live preview** in place of the editor or next to it (`Ctrl+K Alt+V`), with synchronized
+  scrolling: the book and side-panel buttons in the editor title.
 - GitHub-flavored Markdown: tables, clickable task lists, footnotes, front matter.
 - Syntax highlighting, **KaTeX** math and **Mermaid** diagrams.
 - Follows the VS Code theme, or always light or dark; your own CSS on top.
@@ -16,6 +17,8 @@ Preview, edit and export Markdown to **PDF** and **RTF**, without leaving VS Cod
   browser, no Pandoc, no LaTeX.
 - PDFs with real text, links, bookmarks and vector formulas and diagrams.
 - A simple **PDF and RTF viewer** to check the result without leaving VS Code.
+- An **ABNT profile** for formal documents in Portuguese: numbered sections, footnotes at the
+  foot of the page, captioned figures and tables, page numbers.
 - **Editing helpers**: bold, italic, strikethrough and code toggles (multi-cursor), links,
   table formatting, table of contents and list continuation on Enter.
 
@@ -73,6 +76,53 @@ pdf:
 ---
 ```
 
+### ABNT profile
+
+For formal documents following the Brazilian ABNT rules (NBR 14724, NBR 6024, NBR 10520), set
+`mdTool.export.profile` to `abnt`, or choose it per document:
+
+```yaml
+---
+perfil: abnt
+subtitulo: Relatório anual
+autor: Nome do Autor
+local: Cidade
+data: '2026'
+---
+```
+
+Both PDF and RTF then use A4 with 3/2 cm margins, Times New Roman 12 pt, justified 1.5-spaced
+text with a 1.25 cm first-line indent, black text and page numbers in the top right corner.
+
+| Markdown                           | Exported as                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `#`                                | Document title, centered in upper case, with the front-matter lines below |
+| `##` … `######`                    | Sections numbered `1`, `1.1`, `1.1.1`…: `1 INTRODUÇÃO`, `1.1 CONTEXTO`…   |
+| `## Referências`, `{.unnumbered}`  | Centered, without a number (also ANEXO, APÊNDICE, GLOSSÁRIO…)             |
+| `1.` / `-` lists                   | Alíneas `a)`, `b)`; nested items `–`                                      |
+| `>`                                | Long quotation: 4 cm indent, 10 pt, single-spaced                         |
+| `[^1]`                             | Footnote at the foot of the page, 10 pt, under a 5 cm rule                |
+| `Tabela: …` / `Quadro: …` + table  | `Tabela 1 – …` above; IBGE-style rules, or all borders for a quadro       |
+| `Fonte: …` after a table or figure | Source line below it                                                      |
+| `![Título](img.png "Fonte: …")`    | `Figura 1 – Título` above, the title attribute as the source below        |
+| `---`                              | Page break                                                                |
+
+`Gráfico: …`, `Mapa: …` and other illustration names work like `Figura`, each numbered on its
+own. The export warns when a figure or table has no source or a heading skips a level. An
+`abnt:` block in the front matter adjusts the details:
+
+```yaml
+abnt:
+  lista_nao_ordenada: marcador # bullets instead of a), b)
+  hr: linha # ignorar | linha | quebra_pagina
+  tabela_padrao: tabela # tables without a caption: IBGE style instead of quadro
+  primeira_pagina_visivel: false # no number on the first page
+  secao_primaria_nova_pagina: true # every ## starts a page
+  numeracao_secoes: false
+```
+
+The full rules are in [docs/spec-perfil-abnt-documento-formal.md](docs/spec-perfil-abnt-documento-formal.md).
+
 ## Editing
 
 ![Lists continue on Enter, Ctrl+B and table formatting](docs/images/editing.gif)
@@ -107,6 +157,7 @@ folder next to the document:
 | `mdTool.markdown.allowHtml`        | `false`            | Render raw HTML (sanitized)                           |
 | `mdTool.markdown.math`             | `true`             | KaTeX math                                            |
 | `mdTool.markdown.mermaid`          | `true`             | Mermaid diagrams                                      |
+| `mdTool.export.profile`            | `default`          | `default` or `abnt` (formal document)                 |
 | `mdTool.export.outputDir`          | `${fileDirname}`   | Output folder (also accepts `${workspaceFolder}`)     |
 | `mdTool.export.askLocation`        | `false`            | Ask where to save                                     |
 | `mdTool.export.pageSize`           | `A4`               | `A4`, `Letter` or `Legal`                             |
@@ -138,6 +189,9 @@ folder next to the document:
 - The PDF follows a GitHub-like layout of its own: custom preview stylesheets do not apply to it.
 - Emoji are drawn in a single color (PDF fonts cannot carry color glyphs).
 - Raw HTML is left out of PDF and RTF, with a warning.
+- ABNT profile: the PDF does not hyphenate (the RTF lets Word do it), tables split across pages
+  repeat their header but are not marked "continua"/"continuação", and there is no table of
+  contents page yet. LibreOffice draws the footnote rule with its own settings.
 
 ## Requirements
 

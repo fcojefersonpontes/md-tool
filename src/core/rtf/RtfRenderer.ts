@@ -1,3 +1,5 @@
+import { ABNT, type AbntOptions, linePitch } from '../abnt/profile';
+import { type AbntPlan, alineaLetter, type Caption, tableKind } from '../abnt/structure';
 import type { Token } from '../MarkdownEngine';
 import {
   decodeFragment,
@@ -28,6 +30,8 @@ export interface RtfOptions {
   loadImage?: (src: string) => RtfImage | undefined;
   /** Returns a rendered picture of a formula or diagram; without one they are written as source. */
   loadGraphic?: (kind: GraphicKind, source: string) => RtfImage | undefined;
+  /** Formal-document layout (ABNT) instead of the GitHub-like one. */
+  abnt?: { plan: AbntPlan; options: AbntOptions };
 }
 
 export interface RtfResult {
@@ -49,6 +53,22 @@ const SPACE_AFTER_TIGHT = 40;
 const HEADING_SCALE = [2, 1.5, 1.25, 1, 0.875, 0.85];
 
 const BULLETS = ['\\u8226?', '\\u9702?', '\\u9642?']; // • ◦ ▪
+/** Points to twips. */
+const tw = (points: number) => Math.round(points * 20);
+/** ABNT spacing, in twips: one 1.5 line (around headings, quotations...) and one single line. */
+const PITCH = tw(linePitch(ABNT.font.body, ABNT.bodySpacing));
+const SINGLE = tw(linePitch(ABNT.font.body, 1));
+/** ABNT `\sl` values: 1.5 lines and single lines. */
+const SL_BODY = `\\sl${Math.round(240 * ABNT.bodySpacing)}\\slmult1`;
+const SL_SINGLE = '\\sl240\\slmult1';
+const FS_BODY = Math.round(ABNT.font.body * 2);
+const FS_SMALL = Math.round(ABNT.font.small * 2);
+/** ABNT footnotes: lines after the first align past the number. */
+const FOOTNOTE_HANG = 227;
+/** Style numbers of footnote text and footnote calls (as Word numbers them). */
+const FOOTNOTE_STYLE = 15;
+const FOOTNOTE_CALL_STYLE = 16;
+
 const CHECKBOX = { checked: '\\u9745?', unchecked: '\\u9744?' }; // ☑ ☐
 
 interface ListState {
@@ -86,6 +106,15 @@ class RtfWriter {
   private pendingMarker: string | undefined;
   /** Extra space owed before the next paragraph, in twips. */
   private spaceBefore = 0;
+  private readonly abnt: RtfOptions['abnt'];
+  /** ABNT: the next paragraph starts a page. */
+  private breakBefore = false;
+  /** ABNT: notes already written at their first call. */
+  private readonly notesWritten = new Set<number>();
+  private inNote = false;
+  private identified = false;
+  /** ABNT: a heading was just written; its space after replaces the next one's space before. */
+  private afterHeading = false;
 
   private readonly fs: number;
   private readonly codeFs: number;
@@ -99,10 +128,15 @@ class RtfWriter {
     this.codeFs = Math.round(this.fs * 0.85);
     const { page } = options;
     this.contentWidth = page.width - page.margin.left - page.margin.right;
+    this.abnt = options.abnt;
   }
 
   write(): RtfResult {
-    this.out.push(this.header());
+    this.out.push(this.abnt ? this.abntHeader() : this.header());
+    if (this.abnt?.plan.title) {
+      this.out.push(`${this.headingProps(1)}\\qc\\b ${escapeRtf(this.abnt.plan.title)}\\par\n`);
+      this.identification();
+    }
     for (let i = 0; i < this.tokens.length; i++) i = this.block(i);
     this.out.push('}\n');
     return { rtf: this.out.join(''), warnings: [...this.warnings] };
@@ -136,6 +170,10 @@ class RtfWriter {
 
   /** Writes the block starting at `i` and returns the index of its last token. */
   private block(i: number): number {
+    if (this.abnt) {
+      const end = this.abntBlock(i);
+      if (end !== undefined) return end;
+    }
     const token = this.tokens[i];
     switch (token.type) {
       case 'heading_open':
@@ -233,6 +271,7 @@ class RtfWriter {
 
   /** `\pard` with indentation for the current list / quote nesting, plus any owed list marker. */
   private paragraphStart(spaceAfter = SPACE_AFTER, extraProps = ''): string {
+    if (this.abnt) return this.abntParagraphStart(extraProps, false);
     const left = (this.lists.length + this.quoteDepth) * INDENT;
     let props = `\\pard\\plain\\f0\\fs${this.fs}\\cf${this.quoteDepth ? COLOR_MUTED : COLOR_TEXT}\\sa${spaceAfter}`;
     if (left) props += `\\li${left}`;
@@ -266,6 +305,16 @@ class RtfWriter {
     }
 
     const lines = token.content.replace(/\n$/, '').split('\n').map(escapeRtf);
+    if (this.abnt) {
+      // Small single-spaced type in a light box.
+      const box = `\\box\\brdrs\\brdrw10\\brsp80\\brdrcf${COLOR_CODE_BG}`;
+      this.out.push(
+        this.abntParagraphStart(`\\ql\\fs${FS_SMALL}${SL_SINGLE}${box}`, false) +
+          `{\\f1 ${lines.join('\\line ')}}\\par\n`,
+      );
+      this.spaceBefore = SINGLE;
+      return;
+    }
     this.out.push(
       this.paragraphStart(0, `\\cbpat${COLOR_CODE_BG}`) +
         `{\\f1\\fs${this.codeFs} ${lines.join('\\line ')}}\\par\n`,
@@ -295,7 +344,7 @@ class RtfWriter {
   }
 
   private picture(image: RtfImage): string {
-    const indent = (this.lists.length + this.quoteDepth) * INDENT;
+    const indent = this.abnt ? this.abntLeft() : (this.lists.length + this.quoteDepth) * INDENT;
     return imageToRtf(image, this.contentWidth - indent);
   }
 
@@ -333,12 +382,12 @@ class RtfWriter {
 
     // Size columns to their longest cell (like the HTML table), shrinking to fit the page.
     // ~0.6em per character in twips (bold headers are wider than the average).
-    const charWidth = this.options.fontSize * 12;
+    const charWidth = (this.abnt ? ABNT.font.small : this.options.fontSize) * 12;
     const widths = Array.from({ length: columns }, (_, c) => {
       const chars = Math.max(...rows.map((row) => row.cells[c]?.inline?.content.length ?? 0));
       return (Math.min(60, Math.max(3, chars)) + 2) * charWidth;
     });
-    const left = (this.lists.length + this.quoteDepth) * INDENT;
+    const left = this.abnt ? 0 : (this.lists.length + this.quoteDepth) * INDENT;
     const available = this.contentWidth - left;
     const total = widths.reduce((sum, width) => sum + width, 0);
     const scale = Math.min(1, available / total);
@@ -349,28 +398,316 @@ class RtfWriter {
       edges.push(position);
     }
 
-    const border = (side: string) => `\\clbrdr${side}\\brdrs\\brdrw10\\brdrcf${COLOR_BORDER}`;
-    for (const row of rows) {
-      let line = `\\trowd\\trgaph108\\trleft${left}${row.header ? '\\trhdr' : ''}`;
+    const kind = this.abnt && tableKind(this.abnt.plan, start, this.abnt.options);
+    this.afterHeading = false;
+    const color = kind ? COLOR_TEXT : COLOR_BORDER;
+    const border = (side: string) => `\\clbrdr${side}\\brdrs\\brdrw10\\brdrcf${color}`;
+    const headers = rows.filter((row) => row.header);
+    rows.forEach((row, r) => {
+      // ABNT tables (IBGE) only have rules around the header and at the end.
+      let sides = 'tlbr';
+      if (kind === 'Tabela') {
+        sides = '';
+        if (row === headers[0]) sides += 't';
+        if (row === headers[headers.length - 1] || r === rows.length - 1) sides += 'b';
+      }
+      let line = `\\trowd\\trgaph108\\trleft${left}${kind ? '\\trqc' : ''}${row.header ? '\\trhdr' : ''}`;
       for (const edge of edges) {
-        line += border('t') + border('l') + border('b') + border('r');
-        if (row.header) line += `\\clcbpat${COLOR_CODE_BG}`;
+        for (const side of sides) line += border(side);
+        if (row.header && !kind) line += `\\clcbpat${COLOR_CODE_BG}`;
         line += `\\cellx${edge}`;
       }
       line += '\n';
+      const text = kind ? `\\fs${FS_SMALL}${SL_SINGLE}` : `\\fs${this.fs}`;
       for (let c = 0; c < columns; c++) {
         const cell = row.cells[c];
         const content = cell?.inline ? this.inline(cell.inline.children ?? []) : '';
         line +=
-          `\\pard\\plain\\intbl\\q${cell?.align ?? 'l'}\\f0\\fs${this.fs}\\cf${COLOR_TEXT} ` +
+          `\\pard\\plain\\intbl\\q${cell?.align ?? 'l'}\\f0${text}\\cf${COLOR_TEXT} ` +
           (row.header ? `{\\b ${content}}` : content) +
           '\\cell\n';
       }
       this.out.push(line + '\\row\n');
+    });
+    if (kind) {
+      this.spaceBefore = SINGLE;
+      return end;
     }
     // Space between the table and what follows.
     this.out.push(`\\pard\\plain\\sa0\\fs${Math.round(this.fs / 2)}\\par\n`);
     return end;
+  }
+
+  // ---------------------------------------------------------------- ABNT
+
+  private abntHeader(): string {
+    const { fontFamily, codeFontFamily, page, title } = this.options;
+    const { options } = this.abnt!;
+    const styles = [1, 2, 3, 4, 5, 6]
+      .map(
+        (level) =>
+          `{\\s${level}\\sbasedon0\\snext0\\outlinelevel${level - 1}\\keepn\\sb${PITCH}\\sa${PITCH}` +
+          `${SL_BODY}\\f0\\fs${FS_BODY} heading ${level};}`,
+      )
+      .join('');
+    const black = '\\red0\\green0\\blue0;';
+    // Page number: top right, 2 cm from the top edge (the right margin is 2 cm).
+    const number = `\\pard\\plain\\qr\\f0\\fs${FS_SMALL}{\\field{\\*\\fldinst PAGE}{\\fldrslt 1}}\\par`;
+    return (
+      `{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang${ABNT.rtfLang}\\uc1\n` +
+      `{\\fonttbl{\\f0\\froman\\fcharset0 ${escapeRtf(fontFamily)};}` +
+      `{\\f1\\fmodern\\fcharset0 ${escapeRtf(codeFontFamily)};}}\n` +
+      // Black text; COLOR_CODE_BG outlines code blocks.
+      `{\\colortbl;${black}${black}\\red154\\green154\\blue154;${black}${black}}\n` +
+      `{\\stylesheet{\\s0\\qj\\fi${tw(ABNT.firstLineIndent)}${SL_BODY}\\f0\\fs${FS_BODY}` +
+      `\\lang${ABNT.rtfLang} Normal;}${styles}` +
+      // LibreOffice lays footnotes out by their style, ignoring direct indents.
+      `{\\s${FOOTNOTE_STYLE}\\sbasedon0\\qj\\li${FOOTNOTE_HANG}\\fi-${FOOTNOTE_HANG}${SL_SINGLE}` +
+      `\\f0\\fs${FS_SMALL} footnote text;}` +
+      `{\\*\\cs${FOOTNOTE_CALL_STYLE}\\super footnote reference;}}\n` +
+      (title ? `{\\info{\\title ${escapeRtf(title)}}}\n` : '') +
+      `\\paperw${page.width}\\paperh${page.height}` +
+      `\\margl${page.margin.left}\\margr${page.margin.right}` +
+      `\\margt${page.margin.top}\\margb${page.margin.bottom}` +
+      // Hyphenation; footnotes at the foot of the page, arabic, numbered through the document.
+      '\\hyphauto1\\ftnbj\\ftnnar\\ftnrstcont\\fet0\\viewkind4\n' +
+      `\\headery${tw(ABNT.pageNumber.top)}` +
+      (options.firstPageNumber ? '' : '\\titlepg') +
+      `{\\header${number}}` +
+      (options.firstPageNumber ? '' : '{\\headerf\\pard\\plain\\par}') +
+      '\n'
+    );
+  }
+
+  /** ABNT handling of the block at `i`; `undefined` leaves it to the common code. */
+  private abntBlock(i: number): number | undefined {
+    const { plan, options } = this.abnt!;
+    const token = this.tokens[i];
+    switch (token.type) {
+      case 'heading_open':
+        return this.abntHeading(i);
+      case 'paragraph_open':
+        if (plan.skip.has(i)) return i + 2;
+        if (plan.figures.has(i)) {
+          this.abntFigure(i, plan.captions.get(i));
+          return i + 2;
+        }
+        if (plan.references.has(i)) {
+          // References: aligned left, single-spaced, a blank single line between them.
+          this.out.push(this.abntParagraphStart(`\\ql${SL_SINGLE}\\sa${SINGLE}`, false));
+          return i;
+        }
+        this.out.push(this.abntParagraphStart('', true));
+        return i;
+      case 'bullet_list_open':
+      case 'ordered_list_open':
+        this.lists.push({
+          ordered: token.type === 'ordered_list_open',
+          next: Number(token.attrGet('start') ?? 1),
+        });
+        return i;
+      case 'bullet_list_close':
+      case 'ordered_list_close':
+        this.lists.pop();
+        return i;
+      case 'list_item_open':
+        this.pendingMarker = this.abntMarker(token, options);
+        return i;
+      case 'list_item_close':
+        if (this.pendingMarker !== undefined) {
+          this.out.push(this.abntParagraphStart('', false) + '\\par\n');
+        }
+        this.pendingMarker = undefined;
+        return i;
+      case 'blockquote_open':
+        this.quoteDepth++;
+        this.spaceBefore = PITCH;
+        return i;
+      case 'blockquote_close':
+        this.quoteDepth--;
+        this.spaceBefore = PITCH;
+        return i;
+      case 'hr':
+        if (options.rule === 'linha') this.rule();
+        else if (options.rule === 'quebra_pagina') this.breakBefore = true;
+        return i;
+      case 'footnote_block_open': {
+        // Each note was written where it is first called.
+        let end = i;
+        while (end < this.tokens.length - 1 && this.tokens[end].type !== 'footnote_block_close') {
+          end++;
+        }
+        return end;
+      }
+      case 'table_open': {
+        let end = i;
+        this.captioned(plan.captions.get(i), () => {
+          end = this.table(i);
+        });
+        return end;
+      }
+      case 'fence':
+        this.captioned(plan.captions.get(i), () => this.codeBlock(token));
+        return i;
+      default:
+        return undefined;
+    }
+  }
+
+  /** Left indent, in twips, for the current list and quotation nesting. */
+  private abntLeft(): number {
+    const list = this.lists.length
+      ? tw(ABNT.listIndent) + this.lists.length * tw(ABNT.listHang)
+      : 0;
+    return this.quoteDepth * tw(ABNT.quoteIndent) + list;
+  }
+
+  /**
+   * `\pard` for ABNT text: justified, 1.5 lines (quotations: small and single), the
+   * owed list marker hanging before the text, and `firstIndent` for body paragraphs.
+   */
+  private abntParagraphStart(extraProps: string, firstIndent: boolean): string {
+    const left = this.abntLeft();
+    const quote = this.quoteDepth > 0;
+    let props = `\\pard\\plain\\qj\\f0\\lang${ABNT.rtfLang}\\sa0`;
+    props += quote ? `\\fs${FS_SMALL}${SL_SINGLE}` : `\\fs${FS_BODY}${SL_BODY}`;
+    if (left) props += `\\li${left}`;
+    if (this.spaceBefore && !this.afterHeading) props += `\\sb${this.spaceBefore}`;
+    this.spaceBefore = 0;
+    this.afterHeading = false;
+    if (this.breakBefore) {
+      props += '\\pagebb';
+      this.breakBefore = false;
+    }
+    props += extraProps;
+    if (this.pendingMarker !== undefined) {
+      props += `\\fi-${tw(ABNT.listHang)}\\tx${left} ${this.pendingMarker}\\tab`;
+      this.pendingMarker = undefined;
+    } else if (firstIndent && !quote && !this.lists.length) {
+      props += `\\fi${tw(ABNT.firstLineIndent)}`;
+    }
+    return props + ' ';
+  }
+
+  /** `\pard` of a heading at `level`: style, 1.5 lines, one 1.5 line before and after. */
+  private headingProps(level: number): string {
+    let props =
+      `\\pard\\plain\\s${level}\\outlinelevel${level - 1}\\keepn\\sb${PITCH}\\sa${PITCH}` +
+      `${SL_BODY}\\f0\\fs${FS_BODY}\\lang${ABNT.rtfLang}`;
+    if (this.breakBefore) {
+      props += '\\pagebb';
+      this.breakBefore = false;
+    }
+    this.spaceBefore = 0;
+    return props;
+  }
+
+  private abntHeading(i: number): number {
+    const { plan, options } = this.abnt!;
+    const heading = plan.headings.get(i) ?? { role: 'section', level: 2 };
+    const { level, role } = heading;
+    if (role === 'section' && level === 2 && options.primaryNewPage) this.breakBefore = true;
+    let props = this.headingProps(level) + (role === 'section' ? '\\ql' : '\\qc');
+    if (role !== 'section' || level === 2 || level === 4) props += '\\b';
+    if (role === 'section' && level === 6) props += '\\i';
+    let number = '';
+    if (heading.number) {
+      // Lines after the first align with the title's first letter, past the number.
+      const hang = numberWidth(heading.number);
+      props += `\\li${hang}\\fi-${hang}\\tx${hang}`;
+      number = `${heading.number}\\tab `;
+    }
+    this.out.push(props + ' ');
+
+    const id = this.tokens[i].attrGet('id');
+    if (id) {
+      const name = bookmarkName(id);
+      this.out.push(`{\\*\\bkmkstart ${name}}{\\*\\bkmkend ${name}}`);
+    }
+    const inline = this.tokens[i + 1];
+    this.out.push(number);
+    if (inline?.type === 'inline') this.out.push(this.inline(inline.children ?? []));
+    this.out.push('\\par\n');
+    this.afterHeading = true;
+    if (role === 'title') this.identification();
+    return i + 2;
+  }
+
+  /** Subtitle, author, place and date, centered under the title (once). */
+  private identification(): void {
+    if (this.identified) return;
+    this.identified = true;
+    const lines = this.abnt!.plan.identification;
+    if (!lines.length) return;
+    this.afterHeading = false;
+    for (const line of lines) {
+      this.out.push(
+        `\\pard\\plain\\qc\\f0\\fs${FS_BODY}${SL_BODY}\\lang${ABNT.rtfLang} ${escapeRtf(line)}\\par\n`,
+      );
+    }
+    this.spaceBefore = PITCH;
+  }
+
+  /** `a)`, `b)` for alíneas, `–` for subalíneas, `•` for bullets when chosen. */
+  private abntMarker(item: Token, options: AbntOptions): string {
+    if (item.attrGet('class')?.includes('task-list-item')) return ''; // the checkbox is the marker
+    const list = this.lists[this.lists.length - 1];
+    if (!list) return '';
+    if (this.lists.length > 1) return '\\u8211?'; // –
+    if (list.ordered || options.unorderedList === 'alinea') return `${alineaLetter(list.next++)})`;
+    return BULLETS[0];
+  }
+
+  /** `Tabela 1 – Título` above (kept with the element), `Fonte: ...` below. */
+  private captioned(caption: Caption | undefined, draw: () => void): void {
+    if (!caption) return draw();
+    const props = `\\pard\\plain\\qc\\f0\\fs${FS_SMALL}${SL_SINGLE}\\lang${ABNT.rtfLang}`;
+    const label = escapeRtf(`${caption.kind} ${caption.number} – `);
+    const before = this.afterHeading ? 0 : Math.max(PITCH, this.spaceBefore);
+    this.afterHeading = false;
+    const pageBreak = this.breakBefore ? '\\pagebb' : '';
+    this.breakBefore = false;
+    this.spaceBefore = 0;
+    this.out.push(
+      `${props}\\keepn${pageBreak}\\sb${before}\\sa60 ${label}${this.inline(caption.title)}\\par\n`,
+    );
+    draw();
+    this.spaceBefore = 0;
+    if (caption.source) {
+      this.out.push(`${props}\\sb60\\sa0 ${this.inline(caption.source)}\\par\n`);
+    }
+    this.spaceBefore = PITCH;
+  }
+
+  /** A paragraph holding only an image: centered, with its identification and source. */
+  private abntFigure(i: number, caption: Caption | undefined): void {
+    const image = (this.tokens[i + 1].children ?? []).find((child) => child.type === 'image');
+    if (!image) return;
+    this.captioned(caption, () => {
+      const before = this.spaceBefore ? `\\sb${this.spaceBefore}` : '';
+      this.spaceBefore = 0;
+      const keep = caption?.source ? '\\keepn' : '';
+      this.out.push(`\\pard\\plain\\qc${keep}${before}\\sa0\\f0 ${this.image(image)}\\par\n`);
+    });
+    if (!caption) this.spaceBefore = PITCH;
+  }
+
+  /** A footnote, written at its first call; Word places it at the foot of the page. */
+  private footnote(n: number): string {
+    if (this.inNote || this.notesWritten.has(n)) return `{\\super ${n}}`;
+    this.notesWritten.add(n);
+    this.inNote = true;
+    const paragraphs = (this.abnt!.plan.notes.get(n) ?? []).map((p) => this.inline(p));
+    this.inNote = false;
+    const props =
+      `\\pard\\plain\\s${FOOTNOTE_STYLE}\\qj\\f0\\fs${FS_SMALL}${SL_SINGLE}\\lang${ABNT.rtfLang}` +
+      `\\li${FOOTNOTE_HANG}`;
+    const call = `{\\cs${FOOTNOTE_CALL_STYLE}\\super\\chftn}`;
+    const first = `${props}\\fi-${FOOTNOTE_HANG}\\tx${FOOTNOTE_HANG} ${call}\\tab `;
+    const body = paragraphs
+      .map((text, index) => (index ? `\\par${props}\\fi0 ${text}` : first + text))
+      .join('');
+    return `${call}{\\footnote${body || first}}`;
   }
 
   // ---------------------------------------------------------------- inline
@@ -404,7 +741,9 @@ class RtfWriter {
           out += '}';
           break;
         case 'code_inline':
-          out += `{\\f1\\fs${this.codeFs}\\chcbpat${COLOR_CODE_BG} ${escapeRtf(token.content)}}`;
+          out += this.abnt
+            ? `{\\f1 ${escapeRtf(token.content)}}`
+            : `{\\f1\\fs${this.codeFs}\\chcbpat${COLOR_CODE_BG} ${escapeRtf(token.content)}}`;
           break;
         case 'link_open':
           out += this.linkOpen(token.attrGet('href') ?? '');
@@ -430,7 +769,9 @@ class RtfWriter {
           break;
         }
         case 'footnote_ref':
-          out += `{\\super ${footnoteNumber(token)}}`;
+          out += this.abnt
+            ? this.footnote(footnoteNumber(token))
+            : `{\\super ${footnoteNumber(token)}}`;
           break;
         case 'html_inline':
           if (/^<br\s*\/?>$/i.test(token.content)) out += '\\line ';
@@ -450,7 +791,9 @@ class RtfWriter {
     const target = href.startsWith('#')
       ? `\\\\l "${bookmarkName(decodeFragment(href.slice(1)))}"`
       : `"${escapeRtf(href).replace(/"/g, '%22')}"`;
-    return `{\\field{\\*\\fldinst{HYPERLINK ${target}}}{\\fldrslt{\\ul\\cf${COLOR_LINK} `;
+    // ABNT: black and not underlined, like the rest of the text.
+    const look = this.abnt ? '' : `\\ul\\cf${COLOR_LINK} `;
+    return `{\\field{\\*\\fldinst{HYPERLINK ${target}}}{\\fldrslt{${look}`;
   }
 
   private image(token: Token): string {
@@ -460,4 +803,16 @@ class RtfWriter {
     this.warnings.add('image');
     return `[${escapeRtf(token.content || src)}]`;
   }
+}
+
+/**
+ * Width of a section number and the space after it, in twips, for 12 pt text: digits are
+ * half an em in Times New Roman (a little more in Arial), periods and spaces a quarter.
+ * With some slack, so the tab after the number never jumps to the next default stop.
+ */
+function numberWidth(number: string): number {
+  const digits = number.replace(/\D/g, '').length;
+  const periods = number.length - digits;
+  const em = ABNT.font.body * 20;
+  return Math.round((digits * 0.5 + periods * 0.25 + 0.25) * em * 1.15);
 }

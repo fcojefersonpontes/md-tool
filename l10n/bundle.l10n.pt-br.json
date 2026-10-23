@@ -14,6 +14,8 @@
   "Some Mermaid diagrams were exported as code (invalid or could not be drawn).": "Alguns diagramas Mermaid foram exportados como código (inválidos ou não puderam ser desenhados).",
   "Some formulas were exported as TeX source (invalid formula).": "Algumas fórmulas foram exportadas como código TeX (fórmula inválida).",
   "Some images could not be embedded and were replaced by their alt text.": "Algumas imagens não puderam ser embutidas e foram substituídas pelo texto alternativo.",
+  "ABNT: some figures or tables have no source line (\"Fonte: ...\").": "ABNT: há figuras ou tabelas sem a linha de fonte (\"Fonte: ...\").",
+  "ABNT: a heading skips a level (e.g. ## straight to ####).": "ABNT: um título pula um nível (por exemplo, ## direto para ####).",
   "Insert Link": "Inserir Link",
   "Link address (URL or path)": "Endereço do link (URL ou caminho)",
   "Tables are already formatted.": "As tabelas já estão formatadas.",

@@ -1,4 +1,12 @@
 import { parse as parseYaml } from 'yaml';
+import {
+  type AbntOptions,
+  type ExportProfile,
+  type Identification,
+  parseAbntOptions,
+  parseIdentification,
+  parseProfile,
+} from './abnt/profile';
 
 export type PageSize = 'A4' | 'Letter' | 'Legal';
 
@@ -40,6 +48,10 @@ export type PdfOverrides = Partial<Omit<PdfOptions, 'margin'>> & {
 export interface DocumentMeta {
   title?: string;
   pdf: PdfOverrides;
+  /** `profile:` (or `perfil:`), when the document chooses one. */
+  profile?: ExportProfile;
+  abnt: Partial<AbntOptions>;
+  identification: Identification;
 }
 
 const LENGTH = /^(\d+(?:\.\d+)?)\s*(mm|cm|in|pt|px)?$/i;
@@ -97,9 +109,9 @@ export function parsePageSize(value: unknown): PageSize | undefined {
   return PAGE_SIZES.find((size) => size.toLowerCase() === value.trim().toLowerCase());
 }
 
-/** Reads `title` and the `pdf:` block from raw YAML front matter. Never throws. */
+/** Reads `title`, the profile and the `pdf:` and `abnt:` blocks from raw YAML front matter. Never throws. */
 export function parseDocumentMeta(frontMatter: string | undefined): DocumentMeta {
-  const meta: DocumentMeta = { pdf: {} };
+  const meta: DocumentMeta = { pdf: {}, abnt: {}, identification: {} };
   if (!frontMatter) return meta;
   let data: unknown;
   try {
@@ -110,7 +122,11 @@ export function parseDocumentMeta(frontMatter: string | undefined): DocumentMeta
   if (!data || typeof data !== 'object') return meta;
   const root = data as Record<string, unknown>;
 
-  if (typeof root.title === 'string' && root.title.trim()) meta.title = root.title.trim();
+  const title = root.title ?? root.titulo;
+  if (typeof title === 'string' && title.trim()) meta.title = title.trim();
+  meta.profile = parseProfile(root.profile ?? root.perfil);
+  meta.abnt = parseAbntOptions(root.abnt);
+  meta.identification = parseIdentification(root);
 
   const pdf = root.pdf;
   if (pdf && typeof pdf === 'object') {

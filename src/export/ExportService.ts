@@ -136,5 +136,9 @@ function describeWarning(warning: ExportWarning): string {
       return vscode.l10n.t(
         'Some images could not be embedded and were replaced by their alt text.',
       );
+    case 'source':
+      return vscode.l10n.t('ABNT: some figures or tables have no source line ("Fonte: ...").');
+    case 'heading-level':
+      return vscode.l10n.t('ABNT: a heading skips a level (e.g. ## straight to ####).');
   }
 }

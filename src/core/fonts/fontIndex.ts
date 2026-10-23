@@ -189,18 +189,32 @@ export interface ResolvedFonts {
   fallbacks: FamilyFaces[];
 }
 
+/** The families of a CSS-like list (`"Times New Roman", Tinos, serif`), in order. */
+export function familyNames(list: string): string[] {
+  return list
+    .split(',')
+    .map((name) =>
+      name
+        .trim()
+        .replace(/^(["'])(.*)\1$/, '$2')
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
 /**
- * Picks the body and code families: the configured name when installed, else the
+ * Picks the body and code families: the first configured name that is installed, else the
  * platform defaults. `undefined` faces mean no usable font was found at all.
  */
 export function resolveFonts(
   index: FontIndex,
   platform: NodeJS.Platform,
+  /** Family names, or comma-separated lists of them. */
   configured: { fontFamily: string; codeFontFamily: string },
 ): ResolvedFonts {
   const defaults = platformFonts(platform);
-  const choose = (name: string, fallback: string[]) =>
-    (name.trim() && index.family(name.trim())) || index.first(fallback);
+  const choose = (names: string, fallback: string[]) =>
+    index.first(familyNames(names)) ?? index.first(fallback);
   const body = choose(configured.fontFamily, defaults.body);
   return {
     body,

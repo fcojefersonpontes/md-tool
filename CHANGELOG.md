@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.3.0
+
+### ABNT profile
+
+- A second layout for exported PDF and RTF files: a formal document following the Brazilian
+  ABNT rules (NBR 14724, NBR 6024, NBR 10520). Choose it with `mdTool.export.profile: "abnt"`,
+  or per document with `perfil: abnt` in the front matter.
+- A4 with 3 cm top and left and 2 cm bottom and right margins, Times New Roman 12 pt (or the
+  configured family), black text, justified 1.5-spaced paragraphs with a 1.25 cm first-line
+  indent, and page numbers in the top right corner.
+- `#` is the document title, centered in upper case, with the subtitle, author, place and date
+  from the front matter below it. `##` to `######` are sections numbered automatically
+  (`1`, `1.1`, `1.1.1`...), each level with its own emphasis. REFERÊNCIAS, ANEXO, APÊNDICE and
+  headings ending in `{.unnumbered}` are centered without a number.
+- Lists become alíneas `a)`, `b)` with `–` subalíneas; quotes become long quotations (4 cm
+  indent, 10 pt, single-spaced); footnotes go to the foot of the page, under a 5 cm rule.
+- Figures and tables get an identification above (`Figura 1 – ...`, `Tabela 1 – ...`) and a
+  source below: write `Tabela: title` before a table and `Fonte: ...` after it, or use an
+  image's alt text and title. Tables are drawn IBGE style (`Tabela`) or fully ruled (`Quadro`).
+- The export warns when a figure or table has no source, or when a heading skips a level.
+- The `abnt:` front-matter block changes the details: `lista_nao_ordenada`, `hr`,
+  `tabela_padrao`, `primeira_pagina_visivel`, `secao_primaria_nova_pagina`,
+  `numeracao_secoes`.
+
+### Changes
+
+- The editor title has two preview buttons with their own icons, so they no longer look like
+  VS Code's built-in Markdown preview: **Open Preview** (book) shows it in place of the editor,
+  in the same group, and **Open Preview to the Side** keeps working as before. In a preview,
+  **Show Markdown Source** goes back to the file.
+- The preview text is smaller: 14 px instead of 16 px, like VS Code's own Markdown preview.
+- `mdTool.export.fontFamily` and `codeFontFamily` accept a comma-separated list; the first
+  installed family is used.
+- The RTF viewer shows line spacing.
+
 ## 0.2.0
 
 ### Export without a browser

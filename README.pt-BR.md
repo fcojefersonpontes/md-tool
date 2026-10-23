@@ -8,7 +8,8 @@ Visualize, edite e exporte Markdown para **PDF** e **RTF** sem sair do VS Code.
 
 ## Funcionalidades
 
-- **Preview ao vivo** ao lado do editor (`Ctrl+K Alt+V`), com rolagem sincronizada.
+- **Preview ao vivo** no lugar do editor ou ao lado dele (`Ctrl+K Alt+V`), com rolagem
+  sincronizada: os botões de livro e de painel lateral na barra do editor.
 - Markdown no estilo GitHub: tabelas, listas de tarefas clicáveis, notas de rodapé, front matter.
 - Realce de código, fórmulas **KaTeX** e diagramas **Mermaid**.
 - Segue o tema do VS Code, ou fica sempre claro ou escuro; aceita CSS próprio por cima.
@@ -16,6 +17,8 @@ Visualize, edite e exporte Markdown para **PDF** e **RTF** sem sair do VS Code.
   navegador, sem Pandoc, sem LaTeX.
 - PDFs com texto de verdade, links, marcadores e fórmulas e diagramas vetoriais.
 - Um **visualizador de PDF e RTF** simples, para conferir o resultado sem sair do VS Code.
+- Um **perfil ABNT** para documentos formais: seções numeradas, notas no pé da página, figuras
+  e tabelas com identificação e fonte, paginação.
 - **Atalhos de edição**: negrito, itálico, tachado e código (com vários cursores), links,
   formatação de tabelas, sumário e continuação de listas no Enter.
 
@@ -73,6 +76,54 @@ pdf:
 ---
 ```
 
+### Perfil ABNT
+
+Para documentos formais segundo as regras da ABNT (NBR 14724, NBR 6024, NBR 10520), mude
+`mdTool.export.profile` para `abnt`, ou escolha o perfil no próprio documento:
+
+```yaml
+---
+perfil: abnt
+subtitulo: Relatório anual
+autor: Nome do Autor
+local: Cidade
+data: '2026'
+---
+```
+
+O PDF e o RTF passam a usar A4 com margens de 3/2 cm, Times New Roman 12 pt, texto justificado
+com entrelinhas de 1,5 e recuo de 1,25 cm na primeira linha, texto preto e paginação no canto
+superior direito.
+
+| Markdown                              | Vira                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `#`                                   | Título do documento, centralizado e em maiúsculas, com as linhas do front matter abaixo |
+| `##` … `######`                       | Seções numeradas `1`, `1.1`, `1.1.1`…: `1 INTRODUÇÃO`, `1.1 CONTEXTO`…                  |
+| `## Referências`, `{.unnumbered}`     | Centralizado, sem número (também ANEXO, APÊNDICE, GLOSSÁRIO…)                           |
+| Listas `1.` / `-`                     | Alíneas `a)`, `b)`; itens aninhados com `–`                                             |
+| `>`                                   | Citação longa: recuo de 4 cm, 10 pt, entrelinhas simples                                |
+| `[^1]`                                | Nota no pé da página, 10 pt, abaixo de um filete de 5 cm                                |
+| `Tabela: …` / `Quadro: …` + tabela    | `Tabela 1 – …` acima; traços no padrão IBGE, ou todas as bordas no quadro               |
+| `Fonte: …` depois da tabela ou figura | Linha de fonte abaixo dela                                                              |
+| `![Título](img.png "Fonte: …")`       | `Figura 1 – Título` acima, o título da imagem como fonte abaixo                         |
+| `---`                                 | Quebra de página                                                                        |
+
+`Gráfico: …`, `Mapa: …` e os outros nomes de ilustração funcionam como `Figura`, cada um com
+numeração própria. A exportação avisa quando falta a fonte de uma figura ou tabela, ou quando um
+título pula um nível. Um bloco `abnt:` no front matter ajusta os detalhes:
+
+```yaml
+abnt:
+  lista_nao_ordenada: marcador # marcadores em vez de a), b)
+  hr: linha # ignorar | linha | quebra_pagina
+  tabela_padrao: tabela # tabelas sem legenda: padrão IBGE em vez de quadro
+  primeira_pagina_visivel: false # sem número na primeira página
+  secao_primaria_nova_pagina: true # cada ## começa uma página
+  numeracao_secoes: false
+```
+
+As regras completas estão em [docs/spec-perfil-abnt-documento-formal.md](docs/spec-perfil-abnt-documento-formal.md).
+
 ## Edição
 
 ![Listas continuam no Enter, Ctrl+B e formatação de tabela](docs/images/editing.gif)
@@ -107,6 +158,7 @@ pasta `assets/` ao lado do documento:
 | `mdTool.markdown.allowHtml`        | `false`            | Renderizar HTML bruto (sanitizado)                  |
 | `mdTool.markdown.math`             | `true`             | Fórmulas KaTeX                                      |
 | `mdTool.markdown.mermaid`          | `true`             | Diagramas Mermaid                                   |
+| `mdTool.export.profile`            | `default`          | `default` ou `abnt` (documento formal)              |
 | `mdTool.export.outputDir`          | `${fileDirname}`   | Pasta de saída (aceita `${workspaceFolder}`)        |
 | `mdTool.export.askLocation`        | `false`            | Perguntar onde salvar                               |
 | `mdTool.export.pageSize`           | `A4`               | `A4`, `Letter` ou `Legal`                           |
@@ -138,6 +190,9 @@ pasta `assets/` ao lado do documento:
 - O PDF segue um layout próprio no estilo do GitHub: as folhas de estilo do preview não valem para ele.
 - Emojis saem em uma cor só (fontes de PDF não carregam glifos coloridos).
 - HTML bruto fica de fora do PDF e do RTF, com um aviso.
+- Perfil ABNT: o PDF não hifeniza (no RTF, quem hifeniza é o Word), tabelas que continuam na
+  página seguinte repetem o cabeçalho mas não recebem "continua"/"continuação", e ainda não há
+  página de sumário. O LibreOffice desenha o filete das notas com a configuração dele.
 
 ## Requisitos
 

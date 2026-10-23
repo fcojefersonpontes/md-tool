@@ -54,6 +54,9 @@ interface ParaFormat {
   first: number;
   before: number;
   after: number;
+  /** `\sl`: twips, or 240ths of a line when `lineMultiple` (`\slmult1`). */
+  line: number;
+  lineMultiple: boolean;
   style: number;
   outline?: number;
   inTable: boolean;
@@ -249,6 +252,8 @@ const defaultPara = (): ParaFormat => ({
   first: 0,
   before: 0,
   after: 0,
+  line: 0,
+  lineMultiple: false,
   style: 0,
   inTable: false,
   shading: 0,
@@ -771,6 +776,12 @@ class RtfReader {
       case 'sa':
         para.after = param ?? 0;
         return true;
+      case 'sl':
+        para.line = param ?? 0;
+        return true;
+      case 'slmult':
+        para.lineMultiple = param === 1;
+        return true;
       case 's':
         para.style = param ?? 0;
         return true;
@@ -1019,6 +1030,14 @@ class RtfReader {
     if (para.first) style.push(`text-indent:${px(para.first)}px`);
     if (para.before) style.push(`margin-top:${px(para.before)}px`);
     if (para.after) style.push(`margin-bottom:${px(para.after)}px`);
+    if (para.line) {
+      // A single line is about 1.15em in Word (Times New Roman, Arial).
+      style.push(
+        para.lineMultiple
+          ? `line-height:${Math.round((para.line / 240) * 115) / 100}`
+          : `line-height:${px(Math.abs(para.line))}px`,
+      );
+    }
     const background = this.colors[para.shading];
     if (para.shading && background) style.push(`background:${background}`);
     for (const [side, border] of Object.entries(para.borders)) {

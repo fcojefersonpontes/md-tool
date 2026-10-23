@@ -2,7 +2,7 @@
   "name": "md-tool",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "JefersonPontes",
   "author": "Jeferson Pontes",
   "license": "MIT",
@@ -60,13 +60,19 @@
         "command": "mdTool.openPreview",
         "title": "%command.openPreview%",
         "category": "md-tool",
-        "icon": "$(preview)"
+        "icon": "$(book)"
       },
       {
         "command": "mdTool.openPreviewToSide",
         "title": "%command.openPreviewToSide%",
         "category": "md-tool",
-        "icon": "$(open-preview)"
+        "icon": "$(layout-sidebar-right)"
+      },
+      {
+        "command": "mdTool.showSource",
+        "title": "%command.showSource%",
+        "category": "md-tool",
+        "icon": "$(go-to-file)"
       },
       {
         "command": "mdTool.exportPdf",
@@ -163,9 +169,19 @@
     "menus": {
       "editor/title": [
         {
+          "command": "mdTool.openPreview",
+          "when": "editorLangId == markdown && !notebookEditorFocused",
+          "group": "navigation@-2"
+        },
+        {
           "command": "mdTool.openPreviewToSide",
           "when": "editorLangId == markdown && !notebookEditorFocused",
-          "group": "navigation"
+          "group": "navigation@-1"
+        },
+        {
+          "command": "mdTool.showSource",
+          "when": "activeWebviewPanelId == 'mdTool.preview'",
+          "group": "navigation@0"
         },
         {
           "command": "mdTool.exportPdf",
@@ -208,6 +224,10 @@
         {
           "command": "mdTool.openPreviewToSide",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "mdTool.showSource",
+          "when": "activeWebviewPanelId == 'mdTool.preview'"
         },
         {
           "command": "mdTool.exportPdf",
@@ -389,6 +409,20 @@
           "default": true,
           "scope": "resource",
           "description": "%config.markdown.mermaid%"
+        },
+        "mdTool.export.profile": {
+          "type": "string",
+          "enum": [
+            "default",
+            "abnt"
+          ],
+          "enumDescriptions": [
+            "%config.export.profile.default%",
+            "%config.export.profile.abnt%"
+          ],
+          "default": "default",
+          "scope": "resource",
+          "markdownDescription": "%config.export.profile%"
         },
         "mdTool.export.outputDir": {
           "type": "string",

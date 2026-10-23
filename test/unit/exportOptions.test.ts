@@ -81,6 +81,8 @@ describe('parsePageSize', () => {
 });
 
 describe('parseDocumentMeta', () => {
+  const EMPTY = { pdf: {}, abnt: {}, identification: {} };
+
   it('reads title and pdf overrides', () => {
     const meta = parseDocumentMeta(
       'title: Relatório\npdf:\n  format: letter\n  landscape: true\n  margin: 10mm\n  footer: "Página {page}"',
@@ -88,14 +90,16 @@ describe('parseDocumentMeta', () => {
     expect(meta).toEqual({
       title: 'Relatório',
       pdf: { pageSize: 'Letter', landscape: true, margin: '10mm', footer: 'Página {page}' },
+      abnt: {},
+      identification: {},
     });
   });
 
   it('ignores invalid or missing front matter', () => {
-    expect(parseDocumentMeta(undefined)).toEqual({ pdf: {} });
-    expect(parseDocumentMeta('not: [valid')).toEqual({ pdf: {} });
-    expect(parseDocumentMeta('- a list')).toEqual({ pdf: {} });
-    expect(parseDocumentMeta('title: 3\npdf: nope')).toEqual({ pdf: {} });
+    expect(parseDocumentMeta(undefined)).toEqual(EMPTY);
+    expect(parseDocumentMeta('not: [valid')).toEqual(EMPTY);
+    expect(parseDocumentMeta('- a list')).toEqual(EMPTY);
+    expect(parseDocumentMeta('title: 3\npdf: nope')).toEqual(EMPTY);
   });
 });
 

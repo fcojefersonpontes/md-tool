@@ -94,3 +94,55 @@ suite('Export end to end (kitchen sink)', () => {
     assert.strictEqual(file, source.fsPath.replace(/\.md$/, '.rtf'));
   });
 });
+
+suite('Export end to end (ABNT profile)', () => {
+  let dir: string;
+
+  suiteSetup(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-tool-abnt-'));
+    fs.cpSync(path.join(fixtures, 'assets'), path.join(dir, 'assets'), { recursive: true });
+    fs.copyFileSync(path.join(fixtures, 'abnt.md'), path.join(dir, 'abnt.md'));
+    fs.writeFileSync(
+      path.join(dir, 'plain.md'),
+      '# Plain\n\n## Section\n\nText.[^1]\n\n[^1]: Note.\n',
+    );
+  });
+
+  teardown(async () => {
+    await vscode.workspace
+      .getConfiguration('mdTool.export')
+      .update('profile', undefined, vscode.ConfigurationTarget.Global);
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  });
+
+  test('the front matter chooses the profile', async () => {
+    const source = vscode.Uri.file(path.join(dir, 'abnt.md'));
+    const rtfFile = await exportAs('mdTool.exportRtf', source);
+    keep(rtfFile);
+    const rtf = fs.readFileSync(rtfFile, 'ascii');
+    assert.ok(rtf.includes('\\deflang1046'));
+    assert.ok(rtf.includes('{\\f0\\froman\\fcharset0 Times New Roman;}'));
+    assert.ok(rtf.includes('\\margl1701\\margr1134\\margt1701\\margb1134'));
+    assert.ok(rtf.includes('{\\footnote'));
+    assert.ok(rtf.includes('Tabela 1 \\u8211? Atendimentos'));
+
+    const pdfFile = await exportAs('mdTool.exportPdf', source);
+    keep(pdfFile);
+    const pdf = fs.readFileSync(pdfFile, 'latin1');
+    assert.ok(pdf.includes('/Lang (pt-BR)'));
+    assert.ok((pdf.match(/\/Type\s*\/Page\b/g) ?? []).length >= 2);
+  });
+
+  test('the setting chooses it for documents that do not', async () => {
+    const source = vscode.Uri.file(path.join(dir, 'plain.md'));
+    const before = fs.readFileSync(await exportAs('mdTool.exportRtf', source), 'ascii');
+    assert.ok(!before.includes('\\deflang1046'));
+
+    await vscode.workspace
+      .getConfiguration('mdTool.export')
+      .update('profile', 'abnt', vscode.ConfigurationTarget.Global);
+    const after = fs.readFileSync(await exportAs('mdTool.exportRtf', source), 'ascii');
+    assert.ok(after.includes('\\deflang1046'));
+    assert.ok(after.includes('1\\tab SECTION'));
+  });
+});

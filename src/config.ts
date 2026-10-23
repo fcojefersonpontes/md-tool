@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { type ExportProfile, parseProfile } from './core/abnt/profile';
 import {
   type Margins,
   type PageOptions,
@@ -66,6 +67,12 @@ export function getPdfOptions(scope?: vscode.Uri): PdfOptions {
     header: config.get<string>('header', ''),
     footer: config.get<string>('footer', DEFAULT_FOOTER),
   };
+}
+
+/** `mdTool.export.profile`: the layout of exported documents unless their front matter picks one. */
+export function getExportProfile(scope?: vscode.Uri): ExportProfile {
+  const config = vscode.workspace.getConfiguration('mdTool.export', scope);
+  return parseProfile(config.get<string>('profile')) ?? 'default';
 }
 
 export interface FontConfig {

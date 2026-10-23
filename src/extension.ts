@@ -55,6 +55,12 @@ export function activate(context: vscode.ExtensionContext): MdToolApi {
     vscode.commands.registerCommand('mdTool.openPreviewToSide', (uri?: vscode.Uri) =>
       openPreview(uri, true),
     ),
+    // Back from a preview opened in place: the Markdown in the same editor group.
+    vscode.commands.registerCommand('mdTool.showSource', (uri?: vscode.Uri) =>
+      withSource(uri, (source) =>
+        vscode.window.showTextDocument(source, { viewColumn: vscode.ViewColumn.Active }),
+      ),
+    ),
     vscode.commands.registerCommand('mdTool.exportPdf', (uri?: vscode.Uri) => exportAs(uri, 'pdf')),
     vscode.commands.registerCommand('mdTool.exportRtf', (uri?: vscode.Uri) => exportAs(uri, 'rtf')),
     vscode.commands.registerCommand('mdTool.openViewer', async (uri?: vscode.Uri) => {

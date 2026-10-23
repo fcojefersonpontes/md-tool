@@ -293,6 +293,16 @@ Para conferir a exportação sem sair do VS Code, há um editor somente leitura 
 - **PDF**: `pdfjs-dist`, no build legacy, que roda no Chromium do VS Code 1.90. As páginas são desenhadas em canvas quando entram na tela, com camada de texto para seleção e com links: URLs abrem fora, e destinos internos rolam até a página. O worker do pdf.js é carregado de uma URL `blob:`, porque o webview não aceita workers de outra origem.
 - **RTF**: leitor próprio (`src/core/rtf/RtfReader.ts`) que converte RTF em HTML no extension host. A biblioteca `rtf.js` foi avaliada e descartada: não lê tabelas, está parada desde 2022 e pesa 2,1 MB. O leitor cobre o que o exportador gera e o que é comum no Word e no LibreOffice: formatação, títulos por `\outlinelevel` ou por estilo, listas, tabelas, campos HYPERLINK, bookmarks, notas, imagens PNG/JPEG, code pages e `\u`. O texto é sempre escapado, e o CSP do webview bloqueia scripts.
 
+### Perfil ABNT (0.3.0)
+
+Um segundo layout de exportação, para documentos formais, especificado em `docs/spec-perfil-abnt-documento-formal.md`. Escolhido por `mdTool.export.profile` ou por `perfil: abnt` no front matter; o layout no estilo do GitHub continua sendo o padrão.
+
+- **Tokens**: todos os valores (página, fontes, entrelinhas, recuos, filete) ficam em `src/core/abnt/profile.ts`, em pontos. O PDF e o RTF só os traduzem, então os dois formatos não divergem.
+- **Estrutura**: `analyzeAbnt` (`src/core/abnt/structure.ts`) percorre os tokens uma vez e decide o que os dois renderizadores compartilham: papel e número de cada título, legendas (`Tabela:`, `Quadro:`, `Figura:`... antes; `Fonte:` depois; ou o alt e o título da imagem), parágrafos de referências e o conteúdo das notas. Também gera os avisos (falta de fonte, salto de nível).
+- **PDF**: o `PdfRenderer` ganhou texto justificado, recuo de primeira linha e recuo pendente no `layoutLines`, entrelinhas proporcionais (1,5 linha = 1,725 em, como no Word) e notas no pé da página: cada linha que chama uma nota reserva a altura dela no fim da página, e as notas são desenhadas ao trocar de página.
+- **RTF**: estilos `\s1` a `\s6` com `\outlinelevel`, `\sl360\slmult1`, `\fi709`, `\hyphauto1`, notas de verdade com `\footnote` e `\chftn` e paginação em `{\header}` com o campo PAGE. O LibreOffice só respeita o recuo das notas pelo estilo, por isso há os estilos "footnote text" e "footnote reference", como o Word escreve.
+- Fica para depois: hifenização no PDF, "continua/continuação" em tabelas, sumário, frente e verso e citações curtas (lint de citação com menos de três linhas).
+
 ### Fase 5: Opcional / futuro
 
 - Editor WYSIWYG via `CustomTextEditorProvider` (Milkdown ou Tiptap), sincronizado com o `TextDocument`.

@@ -15,6 +15,8 @@ export interface TextStyle {
   code?: boolean;
   /** Baseline shift upwards (superscripts), in points. */
   rise?: number;
+  /** Footnote call: the note is placed at the foot of the page that shows it. */
+  note?: number;
 }
 
 /** Something drawn inline that is not text (formula, image, checkbox). */
@@ -50,6 +52,8 @@ export interface Line {
   descent: number;
   /** Largest text size on the line, for line spacing. */
   size: number;
+  /** Ended by a hard break (or the end of the content), so never stretched to justify it. */
+  last?: boolean;
 }
 
 /** Ideographs, kana and hangul: lines may break between any two of them. */
@@ -65,13 +69,15 @@ type Segment =
 /**
  * Breaks inline content into lines no wider than `maxWidth` (greedy, like a
  * browser): whitespace collapses to single spaces and is dropped at line ends,
- * and a word longer than a line is split between characters.
+ * and a word longer than a line is split between characters. The first line is
+ * `firstIndent` narrower (wider when negative, for hanging indents).
  */
 export function layoutLines(
   items: InlineItem[],
   maxWidth: number,
   measure: Measurer,
   defaultStyle: TextStyle,
+  firstIndent = 0,
 ): Line[] {
   const segments: Segment[] = [];
   let lastStyle = defaultStyle;
@@ -96,8 +102,9 @@ export function layoutLines(
   let current: Piece[] = [];
   let width = 0;
   let spaces: TextStyle[] = [];
-  const finish = (style: TextStyle) => {
-    lines.push(makeLine(current, measure, style));
+  const limit = () => (lines.length ? maxWidth : maxWidth - firstIndent);
+  const finish = (style: TextStyle, last = false) => {
+    lines.push({ ...makeLine(current, measure, style), last });
     current = [];
     width = 0;
     spaces = [];
@@ -106,7 +113,7 @@ export function layoutLines(
 
   for (const segment of segments) {
     if (segment.kind === 'break') {
-      finish(segment.style ?? defaultStyle);
+      finish(segment.style ?? defaultStyle, true);
       continue;
     }
     if (segment.kind === 'space') {
@@ -115,13 +122,13 @@ export function layoutLines(
     }
     const { piece } = segment;
     let gap = current.length ? spaceWidth() : 0;
-    if (current.length && width + gap + piece.width > maxWidth) {
+    if (current.length && width + gap + piece.width > limit()) {
       finish(defaultStyle);
       gap = 0;
     }
-    if (!current.length && piece.type === 'text' && piece.width > maxWidth) {
+    if (!current.length && piece.type === 'text' && piece.width > limit()) {
       // Too long for any line (URLs, long identifiers): split between characters.
-      const chunks = splitWord(piece.text, maxWidth, (text) => measure.width(text, piece.style));
+      const chunks = splitWord(piece.text, limit(), (text) => measure.width(text, piece.style));
       for (const chunk of chunks.slice(0, -1)) {
         current.push({ ...piece, text: chunk, width: measure.width(chunk, piece.style) });
         finish(piece.style);
@@ -140,7 +147,7 @@ export function layoutLines(
     current.push(piece);
     width += gap + piece.width;
   }
-  if (current.length || lines.length === 0) finish(lastStyle);
+  if (current.length || lines.length === 0) finish(lastStyle, true);
   return lines;
 }
 

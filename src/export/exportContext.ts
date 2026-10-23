@@ -1,6 +1,9 @@
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import * as vscode from 'vscode';
+import { type FontConfig, getExportProfile } from '../config';
+import { ABNT, type AbntOptions, DEFAULT_ABNT_OPTIONS } from '../core/abnt/profile';
+import { type DocumentMeta, type PageOptions, parseMargin } from '../core/exportOptions';
 import type { Heading, MarkdownEngine } from '../core/MarkdownEngine';
 import { hasScheme, resolveDocumentPath, splitHref } from '../paths';
 
@@ -11,6 +14,30 @@ export interface ExportContext {
   engine: MarkdownEngine;
   extensionUri: vscode.Uri;
   signal: AbortSignal;
+}
+
+/** The ABNT options when the front matter (`perfil: abnt`) or the settings choose that profile. */
+export function abntOptions(
+  document: vscode.TextDocument,
+  meta: DocumentMeta,
+): AbntOptions | undefined {
+  const profile = meta.profile ?? getExportProfile(document.uri);
+  return profile === 'abnt' ? { ...DEFAULT_ABNT_OPTIONS, ...meta.abnt } : undefined;
+}
+
+/** ABNT page: A4, portrait, margins 3 cm top and left, 2 cm bottom and right. */
+export function abntPage(): PageOptions {
+  const { margin } = ABNT.page;
+  return { pageSize: ABNT.page.size, landscape: false, margin: parseMargin(margin, margin) };
+}
+
+/** ABNT type: 12 pt, Times New Roman (or the configured family, as ABNT allows Arial). */
+export function abntFonts(config: FontConfig): FontConfig {
+  return {
+    fontFamily: config.fontFamily || ABNT.font.family.join(', '),
+    codeFontFamily: config.codeFontFamily || ABNT.font.mono.join(', '),
+    fontSize: ABNT.font.body,
+  };
 }
 
 /** Thrown when the user cancels; the service reports nothing. */

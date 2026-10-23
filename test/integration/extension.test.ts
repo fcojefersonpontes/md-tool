@@ -51,6 +51,7 @@ suite('Extension', () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(commands.includes('mdTool.openPreview'));
     assert.ok(commands.includes('mdTool.openPreviewToSide'));
+    assert.ok(commands.includes('mdTool.showSource'));
     assert.ok(commands.includes('mdTool.exportPdf'));
     assert.ok(commands.includes('mdTool.exportRtf'));
   });
@@ -91,6 +92,19 @@ suite('Extension', () => {
     await vscode.commands.executeCommand('mdTool.openPreviewToSide');
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert.strictEqual(previewTabs().length, 1);
+  });
+
+  test('opens the preview in place and goes back to the source', async () => {
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(file));
+    await vscode.commands.executeCommand('mdTool.openPreview');
+    await waitFor(() => previewTabs().length === 1);
+    const group = vscode.window.tabGroups.activeTabGroup;
+    assert.strictEqual(vscode.window.tabGroups.all.length, 1); // nothing opened to the side
+    assert.ok(group.activeTab?.input instanceof vscode.TabInputWebview);
+
+    await vscode.commands.executeCommand('mdTool.showSource');
+    await waitFor(() => vscode.window.activeTextEditor?.document.uri.fsPath === file.fsPath);
+    assert.strictEqual(vscode.window.activeTextEditor?.viewColumn, group.viewColumn);
   });
 
   test('opens the preview for an explorer resource', async () => {
