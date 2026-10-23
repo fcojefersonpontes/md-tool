@@ -1,4 +1,4 @@
-# Tabela com seis colunas
+# Tabela com seis colunas Tabela com seis colunas Tabela com seis colunas
 
 Exemplo para conferir a largura das colunas na exportação: colunas curtas, números alinhados à
 direita, texto longo que precisa quebrar em várias linhas e código sem espaços.
