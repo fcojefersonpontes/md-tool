@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Documentation: the ABNT examples use generic sample data.
+
 ## 0.3.0
 
 ### ABNT profile
