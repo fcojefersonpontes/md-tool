@@ -1,14 +1,18 @@
 # Changelog
 
+## 0.3.4
+
+- Tables: columns are sized like a browser does. Short cells stay on one line, long text wraps
+  in its own column, and only very long words (code, URLs) break.
+
 ## 0.3.3
 
 - Exported text wraps like the preview: by default (`mdTool.export.fontSize` empty) the body
   size is chosen so a line holds as much text as the preview at full width, about 8 pt on A4
   with 20 mm margins. A heading that takes two lines in the preview takes two in the PDF and
   the RTF. Set a number to fix the size. The ABNT profile keeps its 12 pt.
-- Tables: columns are sized like a browser does. Short cells stay on one line, long text wraps
-  in its own column, and only very long words (code, URLs) break. PDF and RTF size columns the
-  same way.
+- Tables: narrow columns keep their words whole; only very long words (code, URLs) break, in
+  the columns that hold them. PDF and RTF size columns the same way.
 
 ## 0.3.2
 
