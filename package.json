@@ -2,7 +2,7 @@
   "name": "md-tool",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "JefersonPontes",
   "author": "Jeferson Pontes",
   "license": "MIT",
@@ -472,7 +472,7 @@
         },
         "mdTool.export.fontSize": {
           "type": "number",
-          "default": 11,
+          "default": 10.5,
           "minimum": 6,
           "maximum": 72,
           "scope": "resource",

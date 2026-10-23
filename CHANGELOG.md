@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+- PDF and RTF exports use the preview's text size: `mdTool.export.fontSize` now defaults to
+  10.5 pt (the preview's 14 px) instead of 11 pt. The ABNT profile keeps its 12 pt.
+- RTF: table columns leave room for bold headers, which no longer wrap mid-word.
+
 ## 0.3.1
 
 - Documentation: the ABNT examples use generic sample data.

@@ -381,11 +381,15 @@ class RtfWriter {
     if (columns === 0) return end;
 
     // Size columns to their longest cell (like the HTML table), shrinking to fit the page.
-    // ~0.6em per character in twips (bold headers are wider than the average).
-    const charWidth = (this.abnt ? ABNT.font.small : this.options.fontSize) * 12;
+    // ~0.6em per character, 0.7em in bold headers, plus the cell padding (1.2em).
+    const em = (this.abnt ? ABNT.font.small : this.options.fontSize) * 20;
     const widths = Array.from({ length: columns }, (_, c) => {
-      const chars = Math.max(...rows.map((row) => row.cells[c]?.inline?.content.length ?? 0));
-      return (Math.min(60, Math.max(3, chars)) + 2) * charWidth;
+      const ems = Math.max(
+        ...rows.map(
+          (row) => (row.cells[c]?.inline?.content.length ?? 0) * (row.header ? 0.7 : 0.6),
+        ),
+      );
+      return (Math.min(36, Math.max(1.8, ems)) + 1.2) * em;
     });
     const left = this.abnt ? 0 : (this.lists.length + this.quoteDepth) * INDENT;
     const available = this.contentWidth - left;

@@ -86,11 +86,12 @@ export interface FontConfig {
 /** Fonts for both exporters (PDF and RTF). */
 export function getFontConfig(scope?: vscode.Uri): FontConfig {
   const config = vscode.workspace.getConfiguration('mdTool.export', scope);
-  const fontSize = config.get<number>('fontSize', 11);
+  // 10.5 pt: the preview's 14 px.
+  const fontSize = config.get<number>('fontSize', 10.5);
   return {
     fontFamily: config.get<string>('fontFamily', '').trim(),
     codeFontFamily: config.get<string>('codeFontFamily', '').trim(),
-    fontSize: fontSize > 0 && fontSize <= 72 ? fontSize : 11,
+    fontSize: fontSize > 0 && fontSize <= 72 ? fontSize : 10.5,
   };
 }
 

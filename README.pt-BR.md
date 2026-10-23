@@ -166,7 +166,7 @@ pasta `assets/` ao lado do documento:
 | `mdTool.export.margin`             | `20mm`             | Margens (abreviação CSS)                            |
 | `mdTool.export.fontFamily`         | (sistema)          | Fonte do texto no PDF e no RTF                      |
 | `mdTool.export.codeFontFamily`     | (sistema)          | Fonte do código no PDF e no RTF                     |
-| `mdTool.export.fontSize`           | `11`               | Tamanho da fonte (pt)                               |
+| `mdTool.export.fontSize`           | `10.5`             | Tamanho da fonte (pt)                               |
 | `mdTool.pdf.header`                | vazio              | Cabeçalho: `{page}`, `{pages}`, `{title}`, `{date}` |
 | `mdTool.pdf.footer`                | `{page} / {pages}` | Rodapé (mesmos marcadores)                          |
 | `mdTool.editor.listContinuation`   | `true`             | Continuar listas no Enter                           |
