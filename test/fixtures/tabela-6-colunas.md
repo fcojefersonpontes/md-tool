@@ -1,8 +1,11 @@
-# Tabela com seis colunas Tabela com seis colunas Tabela com seis colunas
+# I Tabela com seis colunas II Tabela com seis colunas III Tabela com seis colunas III Tabela com seis colunas
 
 Exemplo para conferir a largura das colunas na exportação: colunas curtas, números alinhados à
 direita, texto longo que precisa quebrar em várias linhas e código sem espaços.
-
+Exemplo para conferir a largura das colunas na exportação: colunas curtas, números alinhados à
+direita, texto longo que precisa quebrar em várias linhas e código sem espaços.
+Exemplo para conferir a largura das colunas na exportação: colunas curtas, números alinhados à
+direita, texto longo que precisa quebrar em várias linhas e código sem espaços.
 | Código | Unidade   | Responsável    | Atendimentos | Situação     | Observações                                                                                      |
 | ------ | --------- | -------------- | -----------: | :----------: | ------------------------------------------------------------------------------------------------ |
 | U-01   | Unidade A | Equipe técnica |        1.250 |    Ativa     | Atendimento contínuo, com revisão mensal dos indicadores e relatório trimestral à coordenação.    |
