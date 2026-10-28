@@ -14,7 +14,8 @@ export type DiagramHostMessage = { type: 'render'; id: number; source: string };
 /** Diagram webview -> extension host. */
 export type DiagramWebviewMessage =
   | { type: 'ready' }
-  | { type: 'rendered'; id: number; svg: string }
+  /** `png` (base64) only for diagrams with emoji, which converters cannot draw in color. */
+  | { type: 'rendered'; id: number; svg: string; png?: string }
   | { type: 'failed'; id: number; error: string };
 
 /** An RTF document converted to HTML by the extension host; lengths in CSS pixels. */

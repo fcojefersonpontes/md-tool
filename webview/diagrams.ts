@@ -1,6 +1,11 @@
 /// <reference lib="dom" />
 // Runs in the temporary webview the exporters open to draw Mermaid diagrams.
-import { EXPORT_MERMAID_CONFIG, type MermaidApi, renderExportDiagram } from './diagram';
+import {
+  EXPORT_MERMAID_CONFIG,
+  emojiPng,
+  type MermaidApi,
+  renderExportDiagram,
+} from './diagram';
 import type { DiagramHostMessage, DiagramWebviewMessage } from './messages';
 
 declare function acquireVsCodeApi(): { postMessage(message: DiagramWebviewMessage): void };
@@ -23,7 +28,8 @@ window.addEventListener('message', (event: MessageEvent<DiagramHostMessage>) => 
         message.source,
         host,
       );
-      vscode.postMessage({ type: 'rendered', id: message.id, svg });
+      const png = await emojiPng(svg).catch(() => undefined);
+      vscode.postMessage({ type: 'rendered', id: message.id, svg, png });
     } catch (error) {
       document.getElementById(`dmd-tool-d${message.id}`)?.remove();
       vscode.postMessage({

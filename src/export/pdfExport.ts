@@ -81,8 +81,13 @@ export async function exportPdf(context: ExportContext): Promise<ExportWarning[]
     date: new Date().toLocaleDateString(vscode.env.language),
     loadImage: (src) => images.get(src),
     loadDiagram: (source) => {
-      const svg = diagrams.get(source);
-      return svg ? { kind: 'svg', svg, ...exporter.svgSize(svg) } : undefined;
+      const diagram = diagrams.get(source);
+      if (!diagram) return undefined;
+      const size = exporter.svgSize(diagram.svg);
+      // Diagrams with emoji come as PNG: pdfkit cannot draw SVG text in color.
+      return diagram.png
+        ? { kind: 'png', data: diagram.png, ...size }
+        : { kind: 'svg', svg: diagram.svg, ...size };
     },
     highlight: (code, lang) => engine.highlightTokens(code, lang),
     abnt: plan ? { plan, options: abnt } : undefined,

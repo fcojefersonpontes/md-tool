@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.6
+
+- PDF and RTF: emoji in Mermaid diagrams show in color, as in the preview. Diagrams with emoji
+  are drawn by VS Code's renderer and embedded as a picture; the others stay vectors.
+
 ## 0.3.5
 
 - PDF: documents with emoji export again (they failed with `e._decode is not a function`).

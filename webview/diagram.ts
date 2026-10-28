@@ -64,6 +64,27 @@ export async function renderExportDiagram(
   }
 }
 
+/** Emoji shown in color: emoji by default (😀), or made so by U+FE0F (☀️). */
+const EMOJI = /\p{Emoji_Presentation}|️/u;
+
+/**
+ * A PNG (base64) of an export SVG that has emoji in its text, drawn by the webview's
+ * browser like the preview does; undefined for SVGs without emoji, which stay vectors.
+ */
+export async function emojiPng(svg: string, scale = 3): Promise<string | undefined> {
+  if (!EMOJI.test(svg)) return undefined;
+  const image = new Image();
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  await image.decode();
+  // Browsers cap canvas size; very large diagrams get a lower resolution.
+  const factor = Math.min(scale, 8000 / Math.max(image.naturalWidth, image.naturalHeight, 1));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * factor));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * factor));
+  canvas.getContext('2d')!.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/png').slice('data:image/png;base64,'.length);
+}
+
 function inlineStyles(root: SVGSVGElement): void {
   // Read everything first: selectors such as `.node rect` stop matching once classes go.
   const elements = Array.from(root.querySelectorAll<SVGElement>('*'));

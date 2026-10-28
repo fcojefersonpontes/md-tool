@@ -18,7 +18,7 @@ import { familyNames } from '../core/fonts/fontIndex';
 import type { Picture } from '../core/graphics/pictures';
 import { readImage, type RtfImage } from '../core/rtf/images';
 import { renderRtf } from '../core/rtf/RtfRenderer';
-import { renderDiagrams } from './diagrams';
+import { type Diagram, renderDiagrams } from './diagrams';
 import {
   abntFonts,
   abntOptions,
@@ -151,14 +151,17 @@ function mathImage(
 }
 
 function diagramImage(
-  svg: string | undefined,
+  diagram: Diagram | undefined,
   exporter: Exporter,
   fonts: Uint8Array[],
   fontFamily: string | undefined,
 ): RtfImage | undefined {
-  if (!svg) return undefined;
-  const { width, height } = exporter.svgSize(svg);
-  return rasterize(svg, width, height, SCALE, exporter, fonts, fontFamily);
+  if (!diagram) return undefined;
+  const { width, height } = exporter.svgSize(diagram.svg);
+  // Diagrams with emoji come already drawn, in color, by the webview.
+  const drawn = diagram.png && readImage(diagram.png);
+  if (drawn) return { ...drawn, display: { width, height } };
+  return rasterize(diagram.svg, width, height, SCALE, exporter, fonts, fontFamily);
 }
 
 /** PNG of an SVG at `scale` times its display size (`width` × `height` CSS px). */

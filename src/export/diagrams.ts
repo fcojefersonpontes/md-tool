@@ -6,6 +6,12 @@ import { ExportCancelledError } from './exportContext';
 /** How long the whole batch may take before the remaining diagrams fall back to code. */
 const TIMEOUT_MS = 60_000;
 
+/** A drawn diagram; `png` when it has emoji, drawn in color by the webview. */
+export interface Diagram {
+  svg: string;
+  png?: Uint8Array;
+}
+
 /**
  * Draws Mermaid diagrams to SVG in a temporary VS Code webview (VS Code's own
  * renderer: no external browser). Diagrams that fail are missing from the result.
@@ -14,8 +20,8 @@ export async function renderDiagrams(
   extensionUri: vscode.Uri,
   sources: string[],
   signal: AbortSignal,
-): Promise<Map<string, string>> {
-  const results = new Map<string, string>();
+): Promise<Map<string, Diagram>> {
+  const results = new Map<string, Diagram>();
   const unique = [...new Set(sources)];
   if (unique.length === 0) return results;
   signal.throwIfAborted();
@@ -51,7 +57,12 @@ export async function renderDiagrams(
             });
             return;
           }
-          if (message.type === 'rendered') results.set(unique[message.id], message.svg);
+          if (message.type === 'rendered') {
+            results.set(unique[message.id], {
+              svg: message.svg,
+              png: message.png ? Buffer.from(message.png, 'base64') : undefined,
+            });
+          }
           // id -1: Mermaid itself failed to load, nothing more will come.
           if (message.type === 'failed' && message.id < 0) finish();
           else if (--pending === 0) finish();
