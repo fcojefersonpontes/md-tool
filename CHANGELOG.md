@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.5
+
+- PDF: documents with emoji export again (they failed with `e._decode is not a function`).
+  Emoji are drawn in color from the system emoji font (Segoe UI Emoji), stay whole with skin
+  tones, keycaps and joined sequences, and remain text for copying and searching.
+
 ## 0.3.4
 
 - Tables: columns are sized like a browser does. Short cells stay on one line, long text wraps

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FontIndex, resolveFonts, type ResolvedFonts } from '../../src/core/fonts/fontIndex';
 import type { FontFace } from '../../src/core/fonts/sfnt';
@@ -384,6 +385,29 @@ describe('renderPdf', () => {
     expect(pages(pdf)).toBeGreaterThanOrEqual(2);
     expect(warnings.sort()).toEqual(['image', 'mermaid']); // no images or diagrams given
     if (fonts.body) expect(pdf).toContain('/FontFile2'); // embedded TrueType
+  });
+
+  it('renders emoji with color fonts (Segoe UI Emoji), keeping them as text', async () => {
+    const fonts = resolveFonts(
+      FontIndex.scan(
+        process.platform === 'win32'
+          ? [path.join(process.env.WINDIR ?? 'C:\\Windows', 'Fonts')]
+          : ['/usr/share/fonts', '/System/Library/Fonts', '/Library/Fonts'],
+      ),
+      process.platform,
+      { fontFamily: '', codeFontFamily: '' },
+    );
+    const markdown = fs.readFileSync(path.join(root, 'test/fixtures/icones-emojis.md'), 'utf8');
+    const { data } = await renderPdf(engine.parse(markdown).tokens, options({ fonts }));
+    const document = await getDocument({ data: new Uint8Array(data), verbosity: 0 }).promise;
+    const { items } = await (await document.getPage(1)).getTextContent();
+    const text = items.map((item) => ('str' in item ? item.str : '')).join('');
+    expect(text).toContain('Tipos de emoji');
+    if (fonts.fallbacks.some((family) => /emoji/i.test(family.name))) {
+      // Drawn as color layers, with the text underneath for copying.
+      expect(text).toContain('🚀');
+      expect(text).toContain('👍🏽');
+    }
   });
 });
 
